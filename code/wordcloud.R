@@ -2,8 +2,9 @@
 
 ####load packages
 libs <- c('wordcloud',
-          'wordcloud2', 
-          'RColorBrewer', 
+          'wordcloud2',
+          'ggplot2',
+          'RColorBrewer','wesanderson',
           'tm', 'tidyr')
 lapply(libs, require, character.only = TRUE)
 
@@ -42,9 +43,65 @@ df <- data.frame(word = names(words),freq=words)
 set.seed(1989) # for reproducibility 
 
 
-wordcloud(words = df$word, freq = df$freq, min.freq = 1,
+# wordcloud(words = df$word, freq = df$freq, min.freq = 2,
+#           max.words=100, random.order=FALSE, rot.per=0.35,
+#           scale=c(2,0.5),
+#           colors=brewer.pal(8, "Set2"))
+
+ 
+wordcloud(words = df$word, freq = df$freq, min.freq = 2,
           max.words=100, random.order=FALSE, rot.per=0.35,
-          colors=brewer.pal(8, "Dark2"))
+          scale=c(2.5,.5))
 
-wordcloud2(data=df, size=1.6, color='random-dark')
 
+png('plots/wordcloud.png', width = 3000, height = 3000, res=1000, units="px")
+
+wordcloud(words = df$word, freq = df$freq, min.freq = 2,
+          max.words=100, random.order=FALSE, rot.per=0.35,
+          scale=c(2.5,.5))
+
+dev.off()
+
+#wordcloud2(data=df, size=1, color=wes_palette('FantasticFox1'))
+
+
+###plot term fequency
+findFreqTerms(dtm, lowfreq = 10)
+findAssocs(dtm, terms = "predator", corlimit = 0.5)
+findAssocs(dtm, terms = "switch", corlimit = 0.5)
+
+head(df, 15)
+
+barplot(df[1:15,]$freq, las = 2, names.arg = df[1:15,]$word,
+        col ="lightblue", main ="Most frequent words",
+        ylab = "Word frequencies")
+
+subsetdf <- subset(df, freq > 20)
+
+barplot <- ggplot(data = subsetdf, aes(x = reorder(word, -freq),y = freq)) +
+  geom_bar(stat = "identity", fill = "lightblue", colour = "black") +
+  theme_bw()  + 
+  theme(
+    panel.background =element_rect(fill='transparent', colour = "black", size=1), 
+    panel.border = element_blank(), 
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    axis.line = element_line(colour = "black", size = .1),
+    axis.text.x = element_text(size=20, angle = 45, hjust = 1), 
+    axis.title = element_text(size=20),
+    axis.text.y = element_text(size=20),
+    legend.title=element_text(size=20),
+    legend.text = element_text(size = 20),
+    plot.background = element_rect(fill='transparent', color=NA),
+    plot.title = element_text(vjust = - 9, hjust =.02),
+    legend.background = element_rect(fill='transparent'),
+    legend.box.background = element_rect(fill='transparent')) + 
+  ylab("Frequency") + 
+  xlab("Words")
+
+
+png('plots/frequency.png', width = 6000, height = 4000, res=1000, units="px")
+
+barplot
+
+dev.off()

@@ -56,3 +56,4 @@ rsconnect/
 /plots
 
 .DS_Store
+*.png

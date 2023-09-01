@@ -17,7 +17,7 @@ lapply(libs, require, character.only = TRUE)
 ###remove columns and headers?
 ###convert to txt
 
-data <- read.table('data/corpus.txt', fill = TRUE)
+data <- read.table('data/corpus2.txt', fill = TRUE)
 text <- Corpus(VectorSource(data))
 
 
@@ -42,11 +42,13 @@ df <- data.frame(word = names(words),freq=words)
 ####create wordcloud
 set.seed(1989) # for reproducibility 
 
-
-# wordcloud(words = df$word, freq = df$freq, min.freq = 2,
-#           max.words=100, random.order=FALSE, rot.per=0.35,
-#           scale=c(2,0.5),
-#           colors=brewer.pal(8, "Set2"))
+wordcloud(words = df$word, 
+          freq = df$freq,
+          min.freq = 1, 
+          max.words = 200,
+          random.order = FALSE, 
+          rot.per = 0.35, 
+          colors = brewer.pal(8, "Set1"))
 
  
 wordcloud(words = df$word, freq = df$freq, min.freq = 2,
@@ -56,9 +58,10 @@ wordcloud(words = df$word, freq = df$freq, min.freq = 2,
 
 png('plots/wordcloud.png', width = 3000, height = 3000, res=1000, units="px")
 
-wordcloud(words = df$word, freq = df$freq, min.freq = 2,
+wordcloud(words = df$word, freq = df$freq, min.freq = 1,
           max.words=100, random.order=FALSE, rot.per=0.35,
-          scale=c(2.5,.5))
+          scale=c(2,0.5),colors = c( "#2E4052", "#BDD9BF", "#FFC857","#E5323B","#929084", "#A997DF"))
+
 
 dev.off()
 
@@ -73,13 +76,13 @@ findAssocs(dtm, terms = "switch", corlimit = 0.5)
 head(df, 15)
 
 barplot(df[1:15,]$freq, las = 2, names.arg = df[1:15,]$word,
-        col ="lightblue", main ="Most frequent words",
+        col ="#2E4052", main ="Most frequent words",
         ylab = "Word frequencies")
 
-subsetdf <- subset(df, freq > 20)
+subsetdf <- subset(df, freq > 14)
 
 barplot <- ggplot(data = subsetdf, aes(x = reorder(word, -freq),y = freq)) +
-  geom_bar(stat = "identity", fill = "lightblue", colour = "black") +
+  geom_bar(stat = "identity", fill = "#FFC857", colour = "black") +
   theme_bw()  + 
   theme(
     panel.background =element_rect(fill='transparent', colour = "black", size=1), 

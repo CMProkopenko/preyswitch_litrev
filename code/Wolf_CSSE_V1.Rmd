@@ -1,0 +1,76 @@
+---
+title: "Wolf CSSE Plots"
+author: "RB"
+date: "2024-05-15"
+output: html_document
+---
+
+## R Markdown
+
+####
+
+```{r}
+libs <- c('data.table', 'readr', 'dplyr', 'lubridate', 'tidyr', 'ggplot2','stringr', 'tibble', 'patchwork', 'performance','see','viridis')
+lapply(libs, require, character.only = TRUE)
+
+```
+
+```{r}
+library(ggplot2)
+library(data.table)
+library(readr)
+library(viridis)
+library(dplyr)
+library(stringr)
+library(tibble)
+```
+
+
+###Load data
+```{r}
+dat <-read.csv('data/WolfDataExtraction_PreyPref.csv')
+str(dat)
+```
+
+
+#dat <- read_csv('data/WolfDataExtraction_PreyPref.csv') ###tibble version
+
+
+
+###Any data transformation or cleaning needed
+
+#####Plots
+
+```{r}
+pref.plot1 <- ggplot(dat) +
+  geom_point(aes(x = Prop_BM_Avail, y = Prop_BM_Consumed, col = Livestock_Wild)) + ##or col = Paper_ID
+  geom_abline(intercept = 0, slope = 1, linetype="dashed") + ###constant 1:1 line
+  theme_classic() + theme(text = element_text(size = 12)) +
+  scale_colour_viridis(discrete = TRUE, end = .9) +
+  xlab("Biomass Available") + ylab("Biomass Consumed") +
+  labs(colour="Prey Category")
+pref.plot1
+```
+
+```{r}
+pref.plot2 <- ggplot(dat) +
+  geom_point(aes(x = Prop_BM_Avail, y = Prop_BM_Consumed, col = Avg_Mass_kg)) + ##or col = Paper_ID
+  geom_abline(intercept = 0, slope = 1, linetype="dashed") + ###constant 1:1 line
+  theme_classic() + theme(text = element_text(size = 12)) +
+  scale_colour_viridis(discrete = FALSE, end = .9) +
+  xlab("Biomass Available") + ylab("Biomass Consumed") +
+  labs(colour="Mass")
+pref.plot2
+ggsave("plots/wolf-preference-live.wild.png", 
+       height = 7, width = 10)
+```
+
+
+```{r}
+ggsave("plots/wolf-preference-biomass-scale.png", 
+       height = 7, width = 10)
+```
+
+ggsave("plots/wolf-preference.png", 
+       height = 7, width = 10)
+

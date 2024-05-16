@@ -1,0 +1,66 @@
+---
+title: "Search Results Subsample"
+author: "RB"
+date: "2023-06-20"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+```{r}
+library(tidyverse)
+library(naniar)
+library(knitr)
+library(skimr)
+```
+
+
+```{r}
+set.seed(17)
+Subsample.100 <- sample(c(1:12161), size=100, replace=F)
+sort(Subsample.100, decreasing = F)
+```
+
+
+
+```{r}
+set.seed(8)
+Full.text.sample.10 <- sample(c(1:55), size=10, replace=F)
+sort(Full.text.sample.10, decreasing = F)
+```
+
+
+```{r}
+set.seed(30)
+String.2.Subsample.100 <- sample(c(1:17797), size=100, replace=F)
+sort(String.2.Subsample.100, decreasing = F)
+```
+
+```{r}
+set.seed(11)
+Full.2.sample.10 <- sample(c(1:17), size=10, replace=F)
+sort(Full.2.sample.10, decreasing = F)
+```
+

@@ -40,6 +40,8 @@ View(dat)
 
 #####Plots
 
+
+
 ```{r}
 pref.plot1 <- ggplot(dat) +
   geom_point(aes(x = Prop_BM_Avail, y = Prop_BM_Consumed, col = Livestock_Wild)) + ##or col = Paper_ID
@@ -49,8 +51,23 @@ pref.plot1 <- ggplot(dat) +
   xlab("Biomass Available") + ylab("Biomass Consumed") +
   labs(colour="Prey Category")
 pref.plot1
+ggsave("plots/wolf-preference-live.wild.png", 
+       height = 7, width = 10)
 ```
 
+```{r}
+pref.plot4 <- ggplot(dat) +
+  geom_point(aes(x = Prop_BM_Avail, y = Prop_BM_Consumed,col= Mass_Cat_A, na.rm = TRUE))+   ##or col = Paper_ID 
+  #geom_line(aes(x = Prop_BM_Avail, y = Prop_BM_Consumed, group=Paper_ID))+#if we wanna check by Paper_ID
+  geom_abline(intercept = 0, slope = 1, linetype="dashed") + ###constant 1:1 line
+  theme_classic() + theme(text = element_text(size = 12)) +
+  scale_colour_viridis(discrete = TRUE, end = .9) +
+  xlab("Biomass Available") + ylab("Biomass Consumed") +
+  labs(colour="Mass Category")
+pref.plot4
+ggsave("plots/wolf-preference-MassCategories.png", 
+       height = 7, width = 10)
+```
 
 
 ```{r}
@@ -63,7 +80,7 @@ pref.plot2 <- ggplot(dat) +
   xlab("Biomass Available") + ylab("Biomass Consumed") +
   labs(colour="Mass")
 pref.plot2
-ggsave("plots/wolf-preference-live.wild.png", 
+ggsave("plots/wolf-preference-mass.png", 
        height = 7, width = 10)
 ```
 
@@ -85,10 +102,11 @@ ggsave("plots/wolf-preference-Paper_ID.png",
 
 
 ```{r}
-ggsave("plots/wolf-preference-biomass-scale.png", 
-       height = 7, width = 10)
+count <- dat %>% 
+  summarise(n= n(Prey_Identity),
+    positive = sum(consumed > available),
+    negative = sum(consumed < available))
 ```
 
-ggsave("plots/wolf-preference.png", 
-       height = 7, width = 10)
+
 

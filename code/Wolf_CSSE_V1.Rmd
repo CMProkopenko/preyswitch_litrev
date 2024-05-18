@@ -52,7 +52,7 @@ pref.plot1 <- ggplot(dat) +
   labs(colour="Prey Category")
 pref.plot1
 ggsave("plots/wolf-preference-live.wild.png", 
-       height = 7, width = 10)
+       height = 5, width = 7)
 ```
 
 ```{r}
@@ -66,7 +66,7 @@ pref.plot4 <- ggplot(dat) +
   labs(colour="Mass Category")
 pref.plot4
 ggsave("plots/wolf-preference-MassCategories.png", 
-       height = 7, width = 10)
+       height = 5, width = 7)
 ```
 
 
@@ -81,7 +81,7 @@ pref.plot2 <- ggplot(dat) +
   labs(colour="Mass") 
 pref.plot2
 ggsave("plots/wolf-preference-mass.png", 
-       height = 7, width = 10)
+       height = 5, width = 7)
 ```
 
 
@@ -96,17 +96,19 @@ pref.plot3 <- ggplot(dat) +
   labs(colour="Paper")
 pref.plot3
 ggsave("plots/wolf-preference-Paper_ID.png", 
-       height = 7, width = 10)
+       height = 5, width = 7)
 ```
 
 
 
 ```{r}
-selection <- dat %>%
-  summarise(positive = sum(Prop_BM_Consumed > Prop_BM_Avail),
-    negative = sum(Prop_BM_Consumed < Prop_BM_Avail))
-selection
+selection.table <- dat %>%
+  count(BM_Use >1, BM_Use<1)
+selection.table
 ```
 
+```{r}
+
+```
 
 

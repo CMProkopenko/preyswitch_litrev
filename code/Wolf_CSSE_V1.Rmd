@@ -23,6 +23,12 @@ library(viridis)
 library(dplyr)
 library(stringr)
 library(tibble)
+library(skimr)
+library(janitor)
+library(tidyverse)
+library(naniar)
+library(knitr)
+library(tidyr)
 ```
 
 
@@ -99,16 +105,34 @@ ggsave("plots/wolf-preference-Paper_ID.png",
        height = 5, width = 7)
 ```
 
-
-
 ```{r}
-selection.table <- dat %>%
-  count(BM_Use >1, BM_Use<1)
-selection.table
+dat %>%
+  skim_without_charts() ### add one cuz one horse is domestic one is feral/wild
+```
+```{r}
+pref <- dat %>%
+  group_by(Livestock_Wild) %>%
+  summarise(
+  "positive" = filter(BM_Use > 1))
+pref
+
+```
+```{r}
+help <- dat %>%
+  group_by(Livestock_Wild)%>%
+  filter(BM_Use>1)
+help
+help2 <- dat %>%
+  group_by(Livestock_Wild)%>%
+  filter(BM_Use<1)
+help2
 ```
 
 ```{r}
-
+preference.table <- dat %>%
+  group_by(Livestock_Wild) %>%
+  summarise(
+    "Positive" = list(BM_Use>1),
+    "Negative" = list(BM_Use<1)) 
+preference.table
 ```
-
-

@@ -34,9 +34,10 @@ dat <- read_csv("~/Github/preyswitch_litrev/data/WolfDataExtraction_PreyPref.csv
 ```{r}
 pref.plot1 <- ggplot(dat) +
   geom_point(aes(x = Prop_BM_Avail, y = Prop_BM_Consumed, col = Livestock_Wild)) + ##or col = Paper_ID
+ # geom_smooth(aes(x = Prop_BM_Avail, y = Prop_BM_Consumed, col = Livestock_Wild, se = FALSE, inherit.aes=TRUE))+ #if we wanna fit a curve to it 
   geom_abline(intercept = 0, slope = 1, linetype="dashed") + ###constant 1:1 line
-  theme_classic() + theme(text = element_text(size = 15)) +
-  scale_colour_viridis(option= "inferno",discrete = TRUE, end = .9, na.translate = F) +
+  theme_classic() + theme(text = element_text(size = 18)) +
+  scale_colour_viridis(begin = 0, end = 0.75, option= "inferno",discrete = TRUE, na.translate = F) +
   xlab("Biomass Available") + ylab("Biomass Consumed") +
   labs(colour="Prey Category")
 pref.plot1
@@ -48,9 +49,10 @@ pref.plot1
 pref.plot4 <- ggplot(dat) +
   geom_point(aes(x = Prop_BM_Avail, y = Prop_BM_Consumed,col= Mass_Cat_A))+   ##or col = Paper_ID 
   #geom_line(aes(x = Prop_BM_Avail, y = Prop_BM_Consumed, group=Paper_ID))+#if we wanna check by Paper_ID
+ #geom_smooth(aes(x = Prop_BM_Avail, y = Prop_BM_Consumed, col = Mass_Cat_A, se = FALSE, inherit.aes=TRUE))+ #if you want to fit a curve
   geom_abline(intercept = 0, slope = 1, linetype="dashed") + ###constant 1:1 line
-  theme_classic() + theme(text = element_text(size = 15)) +
-  scale_colour_viridis(option="inferno",discrete = TRUE, end = .9, na.translate = F) +
+  theme_classic() + theme(text = element_text(size = 18)) +
+  scale_colour_viridis(option="inferno",discrete = TRUE, end = .75, na.translate = F) +
   xlab("Biomass Available") + ylab("Biomass Consumed") +
   labs(colour="Mass Category")
 pref.plot4

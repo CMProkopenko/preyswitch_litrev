@@ -40,7 +40,7 @@ pref.plot1 <- ggplot(dat) +
   xlab("Biomass Available") + ylab("Biomass Consumed") +
   labs(colour="Prey Category")
 pref.plot1
-ggsave("plots/wolf-pref-live.wild_inferno.png", 
+ ggsave("plots/wolf-pref-live.wild_inferno.png",
        height = 5, width = 7, dpi = 700)
 ```
 

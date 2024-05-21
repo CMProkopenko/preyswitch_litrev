@@ -9,33 +9,17 @@ output: html_document
 
 ####
 
+
 ```{r}
-libs <- c('data.table', 'readr', 'dplyr', 'lubridate', 'tidyr', 'ggplot2','stringr', 'tibble', 'patchwork', 'performance','see','viridis')
+libs <- c('data.table', 'readr', 'dplyr', 'lubridate', 'tidyr', 'ggplot2','stringr', 'tibble', 'patchwork', 'performance','see','viridis','skimr', 'janitor','tidyverse', 'naniar', 'knitr')
 lapply(libs, require, character.only = TRUE)
 
-```
-
-```{r}
-library(ggplot2)
-library(data.table)
-library(readr)
-library(viridis)
-library(dplyr)
-library(stringr)
-library(tibble)
-library(skimr)
-library(janitor)
-library(tidyverse)
-library(naniar)
-library(knitr)
-library(tidyr)
 ```
 
 
 ###Load data
 ```{r}
 dat <- read_csv("~/Github/preyswitch_litrev/data/WolfDataExtraction_PreyPref.csv")
-View(dat)
 ```
 
 #dat <- read_csv('data/WolfDataExtraction_PreyPref.csv') ###tibble version
@@ -53,25 +37,25 @@ pref.plot1 <- ggplot(dat) +
   geom_point(aes(x = Prop_BM_Avail, y = Prop_BM_Consumed, col = Livestock_Wild)) + ##or col = Paper_ID
   geom_abline(intercept = 0, slope = 1, linetype="dashed") + ###constant 1:1 line
   theme_classic() + theme(text = element_text(size = 12)) +
-  scale_colour_viridis(discrete = TRUE, end = .9) +
+  scale_colour_viridis(option= "inferno",discrete = TRUE, end = .9, na.translate = F) +
   xlab("Biomass Available") + ylab("Biomass Consumed") +
   labs(colour="Prey Category")
 pref.plot1
-ggsave("plots/wolf-preference-live.wild.png", 
+ggsave("plots/wolf-pref-live.wild_inferno.png", 
        height = 5, width = 7)
 ```
 
 ```{r}
 pref.plot4 <- ggplot(dat) +
-  geom_point(aes(x = Prop_BM_Avail, y = Prop_BM_Consumed,col= Mass_Cat_A, na.rm = TRUE))+   ##or col = Paper_ID 
+  geom_point(aes(x = Prop_BM_Avail, y = Prop_BM_Consumed,col= Mass_Cat_A))+   ##or col = Paper_ID 
   #geom_line(aes(x = Prop_BM_Avail, y = Prop_BM_Consumed, group=Paper_ID))+#if we wanna check by Paper_ID
   geom_abline(intercept = 0, slope = 1, linetype="dashed") + ###constant 1:1 line
   theme_classic() + theme(text = element_text(size = 12)) +
-  scale_colour_viridis(discrete = TRUE, end = .9) +
+  scale_colour_viridis(option="inferno",discrete = TRUE, end = .9, na.translate = F) +
   xlab("Biomass Available") + ylab("Biomass Consumed") +
   labs(colour="Mass Category")
 pref.plot4
-ggsave("plots/wolf-preference-MassCategories.png", 
+ggsave("plots/wolf-preference-MassCategories_inferno.png", 
        height = 5, width = 7)
 ```
 
@@ -82,7 +66,7 @@ pref.plot2 <- ggplot(dat) +
   #geom_line(aes(x = Prop_BM_Avail, y = Prop_BM_Consumed, group=Paper_ID))+#if we wanna check by Paper_ID
   geom_abline(intercept = 0, slope = 1, linetype="dashed") + ###constant 1:1 line
   theme_classic() + theme(text = element_text(size = 12)) +
-  scale_colour_viridis(discrete = TRUE, end = .9) +
+  scale_colour_viridis(discrete = TRUE, end = .9, na.translate = F) +
   xlab("Biomass Available") + ylab("Biomass Consumed") +
   labs(colour="Mass") 
 pref.plot2
@@ -97,7 +81,7 @@ pref.plot3 <- ggplot(dat) +
   #geom_line(aes(x = Prop_BM_Avail, y = Prop_BM_Consumed, group=Paper_ID))+#if we wanna check by Paper_ID
   geom_abline(intercept = 0, slope = 1, linetype="dashed") + ###constant 1:1 line
   theme_classic() + theme(text = element_text(size = 12)) +
-  scale_colour_viridis(discrete = TRUE, end = .9) +
+  scale_colour_viridis(discrete = TRUE, end = .9, na.translate = F) +
   xlab("Biomass Available") + ylab("Biomass Consumed") +
   labs(colour="Paper")
 pref.plot3

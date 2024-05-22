@@ -6,7 +6,7 @@ lapply(libs, require, character.only = TRUE)
 ###Load data
 
 
-dat <- read.csv('data/WolfDataExtraction_PreyPref.csv')
+dat <- read.csv('data/Wolf Data Extraction - Prey Pref.csv')
 #dat <- read_csv('data/WolfDataExtraction_PreyPref.csv') ###tibble version
 
 

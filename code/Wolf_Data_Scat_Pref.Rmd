@@ -1,0 +1,378 @@
+---
+title: "Wolf_Scat_Pref_Half"
+author: "RB"
+date: "2024-10-21"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r load packages, echo = false}
+libs <- c('data.table', 'readr', 'dplyr', 'lubridate', 'tidyr', 'ggplot2','stringr', 'tibble', 'patchwork', 'performance','see','viridis','skimr', 'janitor','tidyverse', 'naniar', 'knitr')
+lapply(libs, require, character.only = TRUE)
+```
+
+```{r load data, echo = FALSE}
+scatpref.messy <- read_csv("~/Github/preyswitch_litrev/data/Wolf_Scat_Pref_Half.csv")
+scatpref <- scatpref.messy %>%
+  select(-Notes, -Study_Area, -Prey_Item, -Prey_Taxa, -Avg_Mass_kg, -Mass_Details, -Err_Prop_BM_Consumed, -BM_Equiv, -Fight_Flight_Guarded, -Vulnerable_Score, -Prey_Notes)
+```
+
+
+
+```{r}
+sort(unique(scatpref$Prey_Taxa_Valid))
+```
+
+
+```{r}
+# Make sure the data is numeric
+scatpref$Pan_Prop_BM_Avail <- as.numeric(scatpref$Pan_Prop_BM_Avail)
+scatpref$Pan_Prop_BM_Cons <- as.numeric(scatpref$Pan_Prop_BM_Cons)
+
+scat.pan.prop.bm.plot.1 <- ggplot(scatpref) +
+  geom_point(aes(x = Pan_Prop_BM_Avail, y = Pan_Prop_BM_Cons, col= Livestock_Wild)) + 
+  geom_abline(intercept = 0, slope = 1, linetype = "dashed") + 
+  theme_classic() + 
+  theme(text = element_text(size = 10)) +
+  scale_colour_viridis(begin = 0, end = 0.9, option= "inferno",discrete = TRUE, na.translate = F) +
+  
+  # Reduce the number of ticks on the axes
+  scale_x_continuous(breaks = c(0, 0.5, 1)) +  
+  scale_y_continuous(breaks = c(0, 0.5, 1)) +  
+  
+  xlab("Proportion Wild Biomass Available") + 
+  ylab("Proportion Wild Biomass Consumed") +
+  labs(colour= "Category")
+
+ggsave("plots/Scat.pan.prop.bm.plot.1.png", height = 5, width = 7, dpi = 700)
+
+scat.pan.prop.bm.plot.1
+```
+
+```{r}
+# Ensure Prey_Taxa_Valid is a factor
+scatpref$Prey_Taxa_Valid <- as.factor(scatpref$Prey_Taxa_Valid)
+
+scatpref.clean <- scatpref %>%
+  filter(!is.na(Pan_Prop_BM_Avail) & !is.na(Pan_Prop_BM_Cons) & !is.na(Pan_Ratio_BM_Cons) & !is.na(Pan_Ratio_BM_Avail))
+
+# Plot with smoothing lines for each Prey_Taxa_Valid
+scat.pref.spp.1 <- ggplot(scatpref.clean) +
+ geom_point(aes(x = Pan_Prop_BM_Avail, y = Pan_Prop_BM_Cons, col = Prey_Taxa_Valid)) +
+  
+  # Fit a smoothing curve for each Study_Code
+  geom_smooth(aes(x = Pan_Prop_BM_Avail, y = Pan_Prop_BM_Cons, col = Prey_Taxa_Valid), method = "loess", se = FALSE, span = 2) + 
+  
+  geom_abline(intercept = 0, slope = 1, linetype="dashed") +
+  
+  theme_classic() + 
+  theme(text = element_text(size = 10)) +
+  
+  # Discrete color scale for Prey_Taxa_Valid
+  scale_colour_viridis(begin = 0, end = 1, option= "turbo", discrete = TRUE, na.translate = FALSE) +
+  
+  # Axis labels and plot title
+  xlab("Proportion Biomass Available") + 
+  ylab("Proportion Biomass Consumed") + 
+  labs(colour = "Prey species") +
+  ylim(0, max(scatpref.clean$Pan_Prop_BM_Cons, na.rm = TRUE))
+
+# Save the plot
+ggsave("plots/scat.pref.spp.1.png", height = 5, width = 7, dpi = 700)
+
+# Show the plot
+scat.pref.spp.1
+```
+
+```{r}
+scatpref.clean$Prey_Taxa_Valid <- as.factor(scatpref.clean$Prey_Taxa_Valid)
+scatpref.clean$Pan_Ratio_BM_Avail <- as.numeric(scatpref.clean$Pan_Ratio_BM_Avail)
+scatpref.clean$Pan_Ratio_BM_Cons <- as.numeric(scatpref.clean$Pan_Ratio_BM_Cons)
+
+# Plot with smoothing lines for each Study_Code
+scat.pref.spp.2 <- ggplot(scatpref.clean) +
+ geom_point(aes(x = Pan_Ratio_BM_Avail, y = Pan_Ratio_BM_Cons, col = Prey_Taxa_Valid)) +
+  
+  # Fit a smoothing curve for each Study_Code
+  geom_smooth(aes(x = Pan_Ratio_BM_Avail, y = Pan_Ratio_BM_Cons, col = Prey_Taxa_Valid), method = "loess", se = TRUE, span = 1) + 
+  
+  geom_abline(intercept = 0, slope = 1, linetype="dashed") +
+  
+  theme_classic() + 
+  theme(text = element_text(size = 10)) +
+  
+  # Discrete color scale for Prey_Taxa_Valid
+  scale_colour_viridis(begin = 0, end = 1, option= "turbo", discrete = TRUE, na.translate = FALSE) +
+  
+  # Axis labels and plot title
+  xlab("Ratio Biomass Available") + 
+  ylab("Ratio Biomass Consumed") + 
+  labs(colour = "Prey species") +
+  ylim(0, max(scatpref.clean$Pan_Ratio_BM_Cons, na.rm = TRUE))
+
+# Save the plot
+ggsave("plots/scat.pref.spp.2.png", height = 5, width = 7, dpi = 700)
+
+# Show the plot
+scat.pref.spp.2
+```
+
+```{r}
+# Step 1: Filter out 'Livestock'
+wild.scat.unfinished <- scatpref %>%
+  filter(Livestock_Wild == "Wild")
+
+# Step 1: Calculate for the Proportion and Ratio for: individuals available and kg available
+wild.scat <- wild.scat.unfinished %>%
+  group_by(Study_Code, Period) %>%
+   mutate(Ind_Tot = sum(Num_Ind)) %>%
+  ungroup() %>%
+  # Proportion of individuals available
+  mutate(Prop_Ind = ifelse(is.na(Num_Ind), Prop_Ind_Avail, Num_Ind / Ind_Tot)) %>%
+  # Ratio of individuals available
+  mutate(Pre_Ratio_Ind = ifelse(is.na(Num_Ind), 
+                                1 - Prop_Ind, Ind_Tot - Num_Ind ))%>%
+  mutate(Ratio_Ind = ifelse(is.na(Num_Ind), 
+                               Prop_Ind / Pre_Ratio_Ind, Num_Ind / Pre_Ratio_Ind)) %>%
+  group_by(Study_Code, Period, Prey_Taxa_Valid) %>%
+ # Proportion of Pantheria kg available
+   mutate(PropInd_x_Pan = Prop_Ind * Pantheria_kg) %>%
+  ungroup() %>%
+  group_by(Study_Code, Period) %>%
+   mutate(Sum_PropInd_x_Pan = sum(PropInd_x_Pan)) %>%
+  mutate(Prop_kg_Avail = PropInd_x_Pan / Sum_PropInd_x_Pan) %>%
+ # Ratio of Pantheria kg available
+  mutate(Pre_Ratio_kg_Avail = Sum_PropInd_x_Pan - PropInd_x_Pan) %>%
+  mutate(Ratio_kg_Avail = PropInd_x_Pan / Pre_Ratio_kg_Avail) %>%
+#Step 2: Calculate the Scat_n_Prey, new relative FO, BM consumed, and ratio and prop of BM consumed
+  #Make sure everything has a Scat_n_Prey if possible
+  group_by(Study_Code, Period, Prey_Taxa_Valid) %>%
+   mutate(Scat_n_Prey = ifelse(is.na(Scat_n_Prey), Scat_n_Tot*Abs_FO/100, Scat_n_Prey)) %>%
+  ungroup() %>%
+  #Calculate a new Relative_FO and a Ratio of Occurences
+   group_by(Study_Code, Period) %>%
+   mutate(Scat_items_Tot = sum(Scat_n_Prey)) %>%
+    mutate(New_Rel_FO = Scat_n_Prey/Scat_items_Tot) %>%
+    mutate(Pre_Ratio_Occ = Scat_items_Tot - Scat_n_Prey) %>%
+    mutate(Ratio_Occs = Scat_n_Prey/Pre_Ratio_Occ) %>%
+  #Calculate BM consumed (using (kg per scat)*Abs FO = 0.439+(0.008*Pan kg))
+  mutate(Abs_FO = ifelse(is.na(Abs_FO), Scat_n_Prey/Scat_n_Tot, Abs_FO)) %>%
+   mutate(kg_Per_Scat = 0.439+0.008*Pantheria_kg) %>%
+#Calculate the proportion and ratio of biomass consumed
+  mutate(Prey_Tot_kg_Cons = kg_Per_Scat*Scat_n_Prey) %>%
+  mutate(Tot_kg_Cons = sum(Prey_Tot_kg_Cons)) %>%
+  mutate(Prop_kg_Cons = Prey_Tot_kg_Cons/Tot_kg_Cons) %>%
+  mutate(Pre_Ratio_kg_Cons = Tot_kg_Cons - Prey_Tot_kg_Cons) %>%
+  mutate(Ratio_kg_Cons = Prey_Tot_kg_Cons/Pre_Ratio_kg_Cons)
+  
+# View the final data frame
+wild.scat
+```
+```{r, Plot of Propotion kg available vs Proportion kg consumed, using on wild prey species} 
+# Ensure Prey_Taxa_Valid is a factor
+wild.scat$Prey_Taxa_Valid <- as.factor(wild.scat$Prey_Taxa_Valid)
+
+wild.scat.clean <- wild.scat%>%
+  filter(!is.na(Prop_kg_Avail) & !is.na(Prop_kg_Cons) & !is.na(Ratio_kg_Cons) & !is.na(Ratio_kg_Avail))
+
+# Plot with smoothing lines for each Prey_Taxa_Valid
+wild.scat.pref.1 <- ggplot(wild.scat.clean) +
+ geom_point(aes(x = Prop_kg_Avail, y = Prop_kg_Cons, col = Prey_Taxa_Valid)) +
+  
+  # Fit a smoothing curve for each Study_Code
+  geom_smooth(aes(x = Prop_kg_Avail, y = Prop_kg_Cons, col = Prey_Taxa_Valid), method = "loess", se = FALSE, span = 1) + 
+  
+  geom_abline(intercept = 0, slope = 1, linetype="dashed") +
+  
+  theme_classic() + 
+  theme(text = element_text(size = 8)) +
+  
+  # Discrete color scale for Prey_Taxa_Valid
+  scale_colour_viridis(begin = 0, end = 1, option= "turbo", discrete = TRUE, na.translate = FALSE) +
+  
+  # Axis labels and plot title
+  xlab("Proportion of Wild kg Available") + 
+  ylab("Proportion of Wild kg Consumed") + 
+  labs(colour = "Prey species") +
+  ylim(0, max(wild.scat.clean$Prop_kg_Cons, na.rm = TRUE))
+
+# Save the plot
+ggsave("plots/scat.pref.spp.1.png", height = 5, width = 7, dpi = 700)
+
+# Show the plot
+wild.scat.pref.1
+```
+
+```{r}
+# Plot with smoothing lines for each Prey_Taxa_Valid
+wild.scat.pref.2 <- ggplot(wild.scat.clean) +
+ geom_point(aes(x = Prop_Ind, y = New_Rel_FO, col = Prey_Taxa_Valid)) +
+  
+  # Fit a smoothing curve for each Study_Code
+  geom_smooth(aes(x = Prop_Ind, y = New_Rel_FO, col = Prey_Taxa_Valid), method = "loess", se = FALSE, span = 1) + 
+  
+  geom_abline(intercept = 0, slope = 1, linetype="dashed") +
+  
+  theme_classic() + 
+  theme(text = element_text(size = 8)) +
+  
+  # Discrete color scale for Prey_Taxa_Valid
+  scale_colour_viridis(begin = 0, end = 1, option= "turbo", discrete = TRUE, na.translate = FALSE) +
+  
+  # Axis labels and plot title
+  xlab("Proportion of Wild Individuals Available") + 
+  ylab("Relative Frequency of Wild Prey") + 
+  labs(colour = "Prey species") +
+  ylim(0, max(wild.scat.clean$Prop_kg_Cons, na.rm = TRUE))
+
+# Save the plot
+ggsave("plots/scat.pref.spp.1.png", height = 5, width = 7, dpi = 700)
+
+# Show the plot
+wild.scat.pref.2
+```
+
+
+```{r, Plot of Ratio kg available vs Ratio kg consumed, using on wild prey species}
+
+wild.scat$Prey_Taxa_Valid <- as.factor(wild.scat$Prey_Taxa_Valid)
+
+wild.scat.clean.ratios <- wild.scat%>%
+  filter(is.finite(Ratio_kg_Cons))
+
+# Plot with smoothing lines for each Prey_Taxa_Valid
+wild.scat.pref.2 <- ggplot(wild.scat.clean.ratios) +
+ geom_point(aes(x = Ratio_kg_Avail, y = Ratio_kg_Cons, col = Prey_Taxa_Valid)) +
+  
+  # Fit a smoothing curve for each Study_Code
+  geom_smooth(aes(x = Ratio_kg_Avail, y = Ratio_kg_Cons, col = Prey_Taxa_Valid), method = "loess", se = FALSE, span = 1) + 
+  
+  geom_abline(intercept = 0, slope = 1, linetype="dashed") +
+  
+  theme_classic() + 
+  theme(text = element_text(size = 8)) +
+  
+  # Discrete color scale for Prey_Taxa_Valid
+  scale_colour_viridis(begin = 0, end = 1, option= "turbo", discrete = TRUE, na.translate = FALSE) +
+  
+  # Axis labels and plot title
+  xlab("Ratio of Wild kg Available") + 
+  ylab("Ratio of Wild kg Consumed") + 
+  labs(colour = "Prey species") +
+  ylim(0, max(wild.scat.clean.ratios$Ratio_kg_Cons))
+
+# Save the plot
+ggsave("plots/scat.pref.spp.2.png", height = 5, width = 7, dpi = 700)
+
+# Show the plot
+wild.scat.pref.2
+```
+
+
+```{r}
+# Filter to desired prey species 
+wild.scat.wildboar <- wild.scat.clean %>% 
+  filter(Prey_Taxa_Valid == "Sus scrofa")
+
+scat.wildboar.prop.plot <- ggplot(wild.scat.wildboar) +
+  geom_point(aes(x = Prop_kg_Avail, y = Prop_kg_Cons, col = Paper_ID)) + 
+   geom_smooth(aes(x = Prop_kg_Avail, y = Prop_kg_Cons), method = "loess", se = FALSE, span = 1) +
+  geom_abline(intercept = 0, slope = 1, linetype = "dashed") + 
+  theme_classic() + 
+  theme(text = element_text(size = 6)) +
+   # Discrete color scale for Col
+  scale_colour_viridis(begin = 0.1, end = 0.9, option= "turbo", discrete = TRUE) +
+ 
+# Set axis titles and limits 
+  xlab("Proportion Wild Biomass Available") + 
+  ylab("Proportion Wild Biomass Consumed") +
+  labs( colour = "Paper ID")
+  ylim(0, max(wild.scat.wildboar$Ratio_kg_Cons))
+
+ggsave("plots/scat.wildboar.prop.plot.png", height = 5, width = 7, dpi = 700)
+
+scat.wildboar.prop.plot
+```
+
+```{r}
+
+scat.wildboar.ratio.plot <- ggplot(wild.scat.wildboar) +
+  geom_point(aes(x = Ratio_kg_Avail, y = Ratio_kg_Cons)) + 
+   geom_smooth(aes(x = Ratio_kg_Avail, y = Ratio_kg_Cons), method = "loess", se = TRUE, span = 1) +
+  geom_abline(intercept = 0, slope = 1, linetype = "dashed") + 
+  theme_classic() + 
+  theme(text = element_text(size = 10)) +
+
+  
+  # Reduce the number of ticks on the axes
+  scale_x_continuous(breaks = c(0, 0.5, 1)) +  
+  scale_y_continuous(breaks = c(0, 0.5, 1)) +  
+  
+  xlab("Ratio Wild Biomass Available") + 
+  ylab("Ratio Wild Biomass Consumed") 
+
+ggsave("plots/scat.wildboar.ratio.plot.png", height = 5, width = 7, dpi = 700)
+
+scat.wildboar.ratio.plot
+```
+
+
+```{r}
+# Filter to desired prey species 
+wild.scat.roedeer <- wild.scat.clean %>% 
+  filter(Prey_Taxa_Valid == "Capreolus capreolus")
+
+scat.roedeer.prop.plot <- ggplot(wild.scat.roedeer) +
+  geom_point(aes(x = Prop_kg_Avail, y = Prop_kg_Cons)) + 
+   geom_smooth(aes(x = Prop_kg_Avail, y = Prop_kg_Cons), method = "loess", se = TRUE, span = 1) +
+  geom_abline(intercept = 0, slope = 1, linetype = "dashed") + 
+  theme_classic() + 
+  theme(text = element_text(size = 10)) +
+
+  
+  # Reduce the number of ticks on the axes
+  scale_x_continuous(breaks = c(0, 0.5, 1)) +  
+  scale_y_continuous(breaks = c(0, 0.5, 1)) +  
+  
+  xlab("Proportion Wild Biomass Available") + 
+  ylab("Proportion Wild Biomass Consumed") 
+
+ggsave("plots/scat.roedeer.prop.plot.png", height = 5, width = 7, dpi = 700)
+
+scat.roedeer.prop.plot
+```
+
+```{r}
+# Filter to desired prey species 
+wild.scat.elk <- wild.scat.clean %>% 
+  filter(Prey_Taxa_Valid == "Cervus elaphus")
+
+scat.elk.prop.plot <- ggplot(wild.scat.elk) +
+  geom_point(aes(x = Prop_kg_Avail, y = Prop_kg_Cons)) + 
+   geom_smooth(aes(x = Prop_kg_Avail, y = Prop_kg_Cons), method = "loess", se = TRUE, span = 1) +
+  geom_abline(intercept = 0, slope = 1, linetype = "dashed") + 
+  theme_classic() + 
+  theme(text = element_text(size = 10)) +
+
+  
+  # Reduce the number of ticks on the axes
+  scale_x_continuous(breaks = c(0, 0.5, 1)) +  
+  scale_y_continuous(breaks = c(0, 0.5, 1)) +  
+  
+  xlab("Proportion Wild Biomass Available") + 
+  ylab("Proportion Wild Biomass Consumed") 
+
+ggsave("plots/scat.elk.prop.plot.png", height = 5, width = 7, dpi = 700)
+
+scat.elk.prop.plot
+```
+

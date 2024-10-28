@@ -1,0 +1,231 @@
+New code chunk shortcut= ctrl+alt+I
+```{r}
+libs <- c('data.table', 'readr', 'dplyr', 'lubridate', 'tidyr', 'ggplot2','stringr', 'tibble', 'patchwork', 'performance','see','viridis','skimr', 'janitor','tidyverse', 'naniar', 'knitr', 'XML', 'xml2', 'Rtools', 'geosphere', 'ggmap', 'tmap', 'sf', 'rnaturalearth', 'rnaturalearthdata')
+lapply(libs, require, character.only = TRUE)
+
+```
+
+load data
+```{r}
+sa_kml_file <- "C:/Users/blott/OneDrive/Documents/Github/preyswitch_litrev/data/Study_Areas_By_Code.kml"
+# Load the KML file
+sa_kml_data <- read_xml(sa_kml_file)
+ns <- xml_ns(sa_kml_data)
+
+# Extract all <Placemark> nodes (make sure the number in the list is the same as the number of study areas)
+placemarks <- xml_find_all(sa_kml_data, "//kml:Placemark", ns = ns) 
+
+```
+ 
+##Create a dataframe with the placemark (study area) name and centroid Lat and Long
+```{r}
+# Function to process coordinates into a matrix
+process_coordinates <- function(coordinate_string) {
+    coords <- strsplit(coordinate_string, " ")[[1]]
+    
+    coord_matrix <- do.call(rbind, lapply(coords, function(x) {
+        point <- strsplit(x, ",")[[1]]
+        if (length(point) >= 2) {
+            return(c(as.numeric(point[1]), as.numeric(point[2])))  # Long, Lat
+        } else {
+            return(c(NA, NA))  # Deal with missing coordinates
+        }
+    }))
+     coord_matrix <- coord_matrix[complete.cases(coord_matrix), ]
+    return(coord_matrix)
+}
+
+# List to store data in
+study.area.list <- list()
+
+# Loop through each Placemark
+for (placemark in placemarks) {
+    # Extract the name
+    name <- xml_text(xml_find_first(placemark, "kml:name", ns = ns))
+    
+    # Extract coordinates
+    polygon_coords <- xml_text(xml_find_first(placemark, "kml:Polygon/kml:outerBoundaryIs/kml:LinearRing/kml:coordinates", ns = ns))
+    
+    if (!is.null(polygon_coords)) {
+        # Process coordinates and calculate the centroid
+        coord_matrix <- process_coordinates(polygon_coords)
+        centroid <- geosphere::centroid(coord_matrix)
+        
+        # Add to the list
+        study.area.list[[length(study.area.list) + 1]] <- data.frame(
+            Placemark = name,
+            Centroid_Longitude = centroid[1],
+            Centroid_Latitude = centroid[2],
+            stringsAsFactors = FALSE
+        )
+    }
+}
+
+# Combine the list into a single data frame
+Centroid_data <- do.call(rbind, study.area.list)
+
+# Print
+print(Centroid_data)
+
+```
+
+
+```{r}
+# Convert the Centroid_data to an sf object
+centroids_sf <- st_as_sf(Centroid_data, coords = c("Centroid_Longitude", "Centroid_Latitude"), crs = 4326)
+
+# Create a simple tmap plot
+tmap_mode("view")  # Switch to interactive mode use "view", use "plot" for static mode (isn't really a map unfortunately)
+
+tm_shape(centroids_sf) +
+  tm_dots(col = "orange", size = 0.1, popup.vars = "Placemark") +
+  tm_basemap("OpenStreetMap")  # Use OpenStreetMap as the base map
+```
+
+
+```{r}
+# Convert the Centroid_data to an sf object
+centroids_sf <- st_as_sf(Centroid_data, coords = c("Centroid_Longitude", "Centroid_Latitude"), crs = 4326)
+
+# get country boundries with the rnaturalearthdata package
+world <- ne_countries(scale = "medium", returnclass = "sf")
+
+# make the basemap
+ggplot() +
+  geom_sf(data = world, fill = "gray95", color = "gray70") +  
+  geom_sf(data = centroids_sf, fill = "red", color = "red", size = 3, alpha = 0.8) +  # Add centroids
+ coord_sf(xlim = c(-180, 180), ylim = c(-90, 90), expand = FALSE) + 
+  theme_minimal() +
+  labs(title = "Distribution of study areas", x = "Longitude", y = "Latitude") +
+  theme(legend.position = "none")
+###would be cool to add an overlay of wolf distributions####
+
+```
+##Load the polygon data for the study areas and ecoregions
+```{r}
+# Load your original polygon KML file
+study_area <- st_read("C:/Users/blott/OneDrive/Documents/Github/preyswitch_litrev/data/Study_Areas_By_Code.kml") 
+
+# Load the ecoregion file
+ecoregions <- st_read("C:/Users/blott/OneDrive/Documents/Github/preyswitch_litrev/data/Terrestrial_Ecoregions.geojson")  
+
+```
+
+##Find what ecoregions compose what percent of the study area
+```{r}
+# Check and set CRS if missing (4326 is for WGS 48 aka long and lat data)
+if (is.na(st_crs(study_area))) {
+  study_area <- st_set_crs(study_area, 4326) 
+}
+
+if (is.na(st_crs(ecoregions))) {
+  ecoregions <- st_set_crs(ecoregions, 4326) 
+}
+
+# Ensure geometries are valid
+study_area <- st_make_valid(study_area)
+ecoregions <- st_make_valid(ecoregions)
+
+# Create an empty data frame
+study_area_ecoregions <- data.frame()
+
+# Loop through each study area polygon
+for (i in 1:nrow(study_area)) {
+  current_study_area <- study_area[i, ]
+  
+# Loop through each ecoregion polygon
+for (j in 1:nrow(ecoregions)) {
+  current_ecoregion <- ecoregions[j, ]
+    
+# Get the overlap (intersection) of a study area and a  ecoregion
+    intersection <- st_intersection(current_study_area, current_ecoregion)
+
+# If there is an overlap (intersection > 0), calculate the areas and percentage overlap
+    if (nrow(intersection) > 0) {
+      study_area_area <- st_area(current_study_area) 
+      intersection_area <- st_area(intersection)
+      percentage_overlap <- (sum(intersection_area) / sum(study_area_area)) * 100
+      
+# Put it in a data frame (the 2 is the number of decimal places for the percentage)
+   study_area_ecoregions <- rbind(study_area_ecoregions, data.frame(
+        Study_Area_Name = current_study_area$Name,
+        Ecoregion_Name = current_ecoregion$ECO_CODE, 
+        Overlap_Percentage = round(percentage_overlap, 2)  
+      ))
+    }
+  }
+}
+
+# Print the results
+print(study_area_ecoregions)
+
+```
+
+## Save it as a csv
+```{r}
+write.csv(study_area_ecoregions, "/data/Study_Area_Ecoregions_Dataframe", row.names = FALSE)
+```
+
+```{r}
+# Load the ecoregion KML file
+Ecoregions <- st_read("C:/Users/blott/OneDrive/Documents/Github/preyswitch_litrev/data/wwf_terr_ecos.dbf") 
+```
+
+```{r}
+# Load the ecoregion KML file
+Ecoregions1 <- st_read("C:/Users/blott/OneDrive/Documents/Github/preyswitch_litrev/data/wwf_terr_ecos.shp") 
+```
+
+
+```{r}
+# Check and set CRS if missing (4326 is for WGS 48 aka long and lat data)
+if (is.na(st_crs(study_area))) {
+  study_area <- st_set_crs(study_area, 4326) 
+}
+
+if (is.na(st_crs(Ecoregions))) {
+  Ecoregions1 <- st_set_crs(Ecoregions1, 4326) 
+}
+
+# Ensure geometries are valid
+study_area <- st_make_valid(study_area)
+Ecoregions1 <- st_make_valid(Ecoregions1)
+
+Ecoregions1 <- st_transform(Ecoregions1, st_crs(study_area))
+
+# Create an empty data frame
+study_area_Ecoregions <- data.frame()
+
+# Loop through each study area polygon
+for (i in 1:nrow(study_area)) {
+  current_study_area <- study_area[i, ]
+  
+# Loop through each ecoregion polygon
+for (j in 1:nrow(Ecoregions1)) {
+  current_Ecoregion1 <- Ecoregions1[j, ]
+    
+# Get the overlap (intersection) of a study area and a  ecoregion
+    intersection <- st_intersection(current_study_area, current_Ecoregion1)
+
+# If there is an overlap (intersection > 0), calculate the areas and percentage overlap8
+    if (nrow(intersection) > 0) {
+      study_area_area <- st_area(current_study_area) 
+      intersection_area <- st_area(intersection)
+      percentage_overlap <- (sum(intersection_area) / sum(study_area_area)) * 100
+      
+# Put it in a data frame (the 2 is the number of decimal places for the percentage)
+   study_area_Ecoregions <- rbind(study_area_Ecoregions, data.frame(
+        Study_Area_Name = current_study_area$Name,
+        Ecoregion_Name = current_Ecoregion1$eco_code, 
+        Overlap_Percentage = round(percentage_overlap, 2)  
+      ))
+    }
+  }
+}
+
+# Print the results
+print(study_area_Ecoregions)
+
+
+```
+

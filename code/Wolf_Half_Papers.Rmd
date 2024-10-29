@@ -1,0 +1,409 @@
+---
+title: "Wolf_Half_Papers"
+author: "RB"
+date: "2024-10-07"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+`echo = FALSE` parameter can be added to the code chunk to prevent printing of the R code that generated the plot.
+
+```{r, load packages}
+libs <- c('data.table', 'readr', 'dplyr', 'lubridate', 'tidyr', 'ggplot2','stringr', 'tibble', 'patchwork', 'performance','see','viridis','skimr', 'janitor','tidyverse', 'naniar', 'knitr')
+lapply(libs, require, character.only = TRUE)
+```
+
+```{r, load data}
+halfofpapers <- read_csv("~/Github/preyswitch_litrev/data/Wolf_PreyPref_Half_Papers.csv")
+halfofpapers.wild <- read_csv("~/Github/preyswitch_litrev/data/Wolf_PreyPref_Half_Papers_Wildonly.csv")
+```
+
+```{r}
+orig.prop.bm.plot.1 <- ggplot(halfofpapers) +
+  geom_point(aes(x = Orig_Prop_BM_Avail, y = Orig_Prop_BM_Consumed, col = Prey_Taxa_Valid)) + # add: , col = Livestock_Wild or col = Paper_ID to colour points by the chosen characteristic
+ # geom_smooth(aes(x = Prop_BM_Avail, y = Prop_BM_Consumed, col = Livestock_Wild, se = FALSE, inherit.aes=TRUE))+ #if we wanna fit a curve to it 
+  geom_abline(intercept = 0, slope = 1, linetype="dashed") + ###constant 1:1 line
+  theme_classic() + theme(text = element_text(size = 1)) +
+  scale_colour_viridis(begin = 0, end = 1, option= "turbo",discrete = TRUE, na.translate = F) +
+  xlab("Proportion Biomass Available") + ylab("Proportion Biomass Consumed") + labs(colour= "Species")
+## + labs(colour="legend title") if you want to colour/label by some character
+orig.prop.bm.plot.1
+ ggsave("plots/original-prop-BM_species.png",
+      height = 5, width = 7, dpi = 700)
+```
+
+```{r}
+sort(unique(halfofpapers$Prey_Taxa_Valid))
+```
+
+
+
+```{r}
+# Make sure the data is numeric
+halfofpapers$Pan_Prop_BM_Avail <- as.numeric(halfofpapers$Pan_Prop_BM_Avail)
+halfofpapers$Pan_Prop_BM_Cons <- as.numeric(halfofpapers$Pan_Prop_BM_Cons)
+
+pan.prop.bm.plot.1 <- ggplot(halfofpapers) +
+  geom_point(aes(x = Pan_Prop_BM_Avail, y = Pan_Prop_BM_Cons)) + 
+  geom_abline(intercept = 0, slope = 1, linetype = "dashed") + 
+  theme_classic() + 
+  theme(text = element_text(size = 10)) +
+  
+  # Reduce the number of ticks on the axes
+  scale_x_continuous(breaks = c(0, 0.5, 1)) +  
+  scale_y_continuous(breaks = c(0, 0.5, 1)) +  
+  
+  xlab("Proportion Biomass Available") + 
+  ylab("Proportion Biomass Consumed")
+
+ggsave("plots/pan-prop-BM.png", height = 5, width = 7, dpi = 700)
+
+pan.prop.bm.plot.1
+
+```
+
+```{r}
+# Make sure the data is numeric
+halfofpapers.wild$Pan_Prop_BM_Avail <- as.numeric(halfofpapers.wild$Pan_Prop_BM_Avail)
+halfofpapers.wild$Pan_Prop_BM_Cons <- as.numeric(halfofpapers.wild$Pan_Prop_BM_Cons)
+
+wild.pan.prop.bm.plot.1 <- ggplot(halfofpapers.wild) +
+  geom_point(aes(x = Pan_Prop_BM_Avail, y = Pan_Prop_BM_Cons)) + 
+  geom_abline(intercept = 0, slope = 1, linetype = "dashed") + 
+  theme_classic() + 
+  theme(text = element_text(size = 10)) +
+  
+  # Reduce the number of ticks on the axes
+  scale_x_continuous(breaks = c(0, 0.5, 1)) +  
+  scale_y_continuous(breaks = c(0, 0.5, 1)) +  
+  
+  xlab("Proportion Wild Biomass Available") + 
+  ylab("Proportion Wild Biomass Consumed")
+
+ggsave("plots/pan-prop-BM_wild.png", height = 5, width = 7, dpi = 700)
+
+wild.pan.prop.bm.plot.1
+
+```
+
+
+```{r}
+pan.prop.bm.plot.2 <- ggplot(halfofpapers) +
+  geom_point(aes(x = Pan_Prop_BM_Avail, y = Pan_Prop_BM_Cons, col = Pantheria_kg)) + # add: , col = Livestock_Wild or col = Paper_ID to colour points by the chosen characteristic
+ # geom_smooth(aes(x = Prop_BM_Avail, y = Prop_BM_Consumed, col = Livestock_Wild, se = FALSE, inherit.aes=TRUE))+ #if we wanna fit a curve to it 
+  geom_abline(intercept = 0, slope = 1, linetype="dashed") + ###constant 1:1 line
+  theme_classic() + theme(text = element_text(size = 15)) +
+  scale_colour_viridis(begin = 0, end = 1, option= "turbo",discrete = F) +
+  xlab("Proportion Biomass Available") + ylab("Proportion Biomass Consumed") + labs(colour= "Species kg")
+## + labs(colour="legend title") if you want to colour/label by some character
+pan.prop.bm.plot.2
+ ggsave("plots/pan-prop-BM_Pantheriakg.png",
+      height = 5, width = 7, dpi = 700)
+```
+
+```{r}
+wild.pan.prop.bm.plot.2 <- ggplot(halfofpapers.wild) +
+  geom_point(aes(x = Pan_Prop_BM_Avail, y = Pan_Prop_BM_Cons, col = Pantheria_kg)) + # add: , col = Livestock_Wild or col = Paper_ID to colour points by the chosen characteristic
+ # geom_smooth(aes(x = Prop_BM_Avail, y = Prop_BM_Consumed, col = Livestock_Wild, se = FALSE, inherit.aes=TRUE))+ #if we wanna fit a curve to it 
+  geom_abline(intercept = 0, slope = 1, linetype="dashed") + ###constant 1:1 line
+  theme_classic() + theme(text = element_text(size = 15)) +
+  scale_colour_viridis(begin = 0, end = 1, option= "turbo",discrete = F) +
+  xlab("Proportion Wild Biomass Available") + ylab("Proportion Wild Biomass Consumed") + labs(colour= "Species kg")
+## + labs(colour="legend title") if you want to colour/label by some character
+wild.pan.prop.bm.plot.2
+ ggsave("plots/pan-prop-BM_Pantheriakg_wild.png",
+      height = 5, width = 7, dpi = 700)
+```
+
+
+```{r}
+halfofpapers$Pantheria_kg_cat <- cut(halfofpapers$Pantheria_kg,
+                                     breaks = c(0, 20.5, 80.5, 150.5, 300.5, 500.5, Inf), 
+                                     labels = c("< 20 kg", "20-80 kg", "80-150 kg", "150-300 kg", "300-500 kg", "> 500 kg"),
+                                     right = FALSE) # Use right=FALSE for inclusive lower bounds
+
+pan.prop.bm.plot.3 <- ggplot(halfofpapers) +
+  geom_point(aes(x = Pan_Prop_BM_Avail, y = Pan_Prop_BM_Cons, col = Pantheria_kg_cat)) + 
+  geom_abline(intercept = 0, slope = 1, linetype = "dashed") + # constant 1:1 line
+  theme_classic() + 
+  theme(text = element_text(size = 15)) +
+  scale_colour_viridis_d(begin = 0.2, end = 0.95, option = "inferno") + 
+  xlab("Proportion Biomass Available") + 
+  ylab("Proportion Biomass Consumed") + 
+  labs(colour = "Species kg")
+
+# Save the plot
+ggsave("plots/pan-prop-BM_Pantheriakg_category1.png", height = 5, width = 7, dpi = 700)
+
+# Show the plot
+pan.prop.bm.plot.3
+```
+
+```{r}
+halfofpapers.wild$Pantheria_kg_cat <- cut(halfofpapers.wild$Pantheria_kg,
+                                     breaks = c(0, 20.5, 80.5, 150.5, 300.5, 500.5, Inf), 
+                                     labels = c("< 20 kg", "20-80 kg", "80-150 kg", "150-300 kg", "300-500 kg", "> 500 kg"),
+                                     right = FALSE) # Use right=FALSE for inclusive lower bounds
+
+wild.pan.prop.bm.plot.3 <- ggplot(halfofpapers.wild) +
+  geom_point(aes(x = Pan_Prop_BM_Avail, y = Pan_Prop_BM_Cons, col = Pantheria_kg_cat)) + 
+  geom_abline(intercept = 0, slope = 1, linetype = "dashed") + # constant 1:1 line
+  theme_classic() + 
+  theme(text = element_text(size = 15)) +
+  scale_colour_viridis_d(begin = 0.2, end = 0.95, option = "inferno") + 
+  xlab("Proportion Wild Biomass Available") + 
+  ylab("Proportion Wild Biomass Consumed") + 
+  labs(colour = "Species kg")
+
+# Save the plot
+ggsave("plots/wild pan-prop-BM_Pantheriakg_category1.png", height = 5, width = 7, dpi = 700)
+
+# Show the plot
+wild.pan.prop.bm.plot.3
+```
+
+
+```{r}
+pan.prop.bm.plot.4 <- ggplot(halfofpapers) +
+  geom_point(aes(x = Pan_Prop_BM_Avail, y = Pan_Prop_BM_Cons, col = Prey_Taxa_Valid)) + # add: , col = Livestock_Wild or col = Paper_ID to colour points by the chosen characteristic
+ # geom_smooth(aes(x = Prop_BM_Avail, y = Prop_BM_Consumed, col = Livestock_Wild, se = FALSE, inherit.aes=TRUE))+ #if we wanna fit a curve to it 
+  geom_abline(intercept = 0, slope = 1, linetype="dashed") + ###constant 1:1 line
+  theme_classic() + theme(text = element_text(size = 1)) +
+  scale_colour_viridis(begin = 0, end = 1, option= "turbo",discrete = TRUE, na.translate = F) +
+  xlab("Proportion Biomass Available") + ylab("Proportion Biomass Consumed") + labs(colour= "Species")
+## + labs(colour="legend title") if you want to colour/label by some character
+pan.prop.bm.plot.4
+ ggsave("plots/pan-prop-BM_species.png",
+      height = 5, width = 7, dpi = 700)
+```
+
+```{r}
+pan.prop.bm.plot.5 <- ggplot(halfofpapers) +
+  geom_point(aes(x = Pan_Prop_BM_Avail, y = Pan_Prop_BM_Cons, col = Livestock_Wild)) + # add: , col = Livestock_Wild or col = Paper_ID to colour points by the chosen characteristic
+ # geom_smooth(aes(x = Prop_BM_Avail, y = Prop_BM_Consumed, col = Livestock_Wild, se = FALSE, inherit.aes=TRUE))+ #if we wanna fit a curve to it 
+  geom_abline(intercept = 0, slope = 1, linetype="dashed") + ###constant 1:1 line
+  theme_classic() + theme(text = element_text(size = 10)) +
+  scale_colour_viridis(begin = 0, end = 0.9, option= "inferno",discrete = TRUE, na.translate = F) +
+  xlab("Proportion Biomass Available") + ylab("Proportion Biomass Consumed") + labs(colour= "Category")
+## + labs(colour="legend title") if you want to colour/label by some character
+pan.prop.bm.plot.5
+ ggsave("plots/pan-prop-BM_species.png",
+      height = 5, width = 7, dpi = 700)
+```
+
+```{r}
+halfofpapers.panprop <- halfofpapers %>%
+  filter(!is.na(Pan_Ratio_BM_Cons)) %>%
+  filter(!is.na(Pan_Ratio_BM_Avail))
+
+sort(unique(halfofpapers.panprop$Study_Code))
+```
+
+
+```{r}
+halfofpapers$Pan_Prop_BM_Avail <- as.numeric(halfofpapers$Pan_Prop_BM_Avail)
+halfofpapers$Pan_Prop_BM_Cons <- as.numeric(halfofpapers$Pan_Prop_BM_Cons)
+
+pan.prop.bm.plot.6 <- ggplot(halfofpapers.panprop) +
+ geom_point(aes(x = Pan_Prop_BM_Avail, y = Pan_Prop_BM_Cons, col = Study_Code)) + # add: , col = Livestock_Wild or col = Paper_ID to colour points by the chosen characteristic
+ #geom_smooth(aes(x = Pan_Prop_BM_Avail, y = Pan_Prop_BM_Cons, col = Study_Code, se = FALSE, inherit.aes=TRUE))+ #if we wanna fit a curve to it 
+  geom_abline(intercept = 0, slope = 1, linetype="dashed") + ###constant 1:1 line
+  theme_classic() + theme(text = element_text(size = 1)) +
+  scale_colour_viridis(begin = 0, end = 1, option= "turbo",discrete = TRUE, na.translate = F) +
+  xlab("Proportion Biomass Available") + ylab("Proportion Biomass Consumed") + labs(colour= "Study and Area")
+## + labs(colour="legend title") if you want to colour/label by some character
+pan.prop.bm.plot.6
+ ggsave("plots/pan-prop-BM_StudyCode.png",
+      height = 5, width = 7, dpi = 700)
+```
+
+```{r}
+
+halfofpapers.panprop.3$Pan_Prop_BM_Avail <- as.numeric(halfofpapers.panprop.3$Pan_Prop_BM_Avail)
+halfofpapers.panprop.3$Pan_Prop_BM_Cons <- as.numeric(halfofpapers.panprop.3$Pan_Prop_BM_Cons)
+
+# Ensure Study_Code is a factor
+halfofpapers.panprop.3$Study_Code <- as.factor(halfofpapers.panprop.3$Study_Code)
+
+halfofpapers.panprop.3 <- halfofpapers.panprop %>%
+  filter(!is.na(Pan_Prop_BM_Avail) & !is.na(Pan_Prop_BM_Cons)) %>%
+  group_by(Study_Code) %>%
+  filter(n() >= 3) %>%
+  ungroup()
+
+
+# Plot with smoothing lines for each Study_Code
+pan.prop.bm.plot.7 <- ggplot(halfofpapers.panprop.3) +
+ geom_point(aes(x = Pan_Prop_BM_Avail, y = Pan_Prop_BM_Cons, col = Study_Code)) +
+  
+  # Fit a smoothing curve for each Study_Code
+  geom_smooth(aes(x = Pan_Prop_BM_Avail, y = Pan_Prop_BM_Cons, col = Study_Code), method = "loess", se = FALSE, span = 0.8) + 
+  
+  geom_abline(intercept = 0, slope = 1, linetype="dashed") +
+  
+  theme_classic() + 
+  theme(text = element_text(size = 10)) +
+  
+  # Discrete color scale for Study_Code
+  scale_colour_viridis(begin = 0, end = 1, option= "turbo", discrete = TRUE, na.translate = FALSE) +
+  
+  # Axis labels and plot title
+  xlab("Proportion Biomass Available") + 
+  ylab("Proportion Biomass Consumed") + 
+  labs(colour = "Study and Area") +
+  ylim(0, max(halfofpapers.panprop.3$Pan_Prop_BM_Cons, na.rm = TRUE))
+
+# Save the plot
+ggsave("plots/pan-prop-BM_StudyCode_ind.png", height = 5, width = 7, dpi = 700)
+
+# Show the plot
+pan.prop.bm.plot.7
+
+
+```
+
+
+```{r}
+halfofpapers.panratio.3 <- halfofpapers%>%
+  filter(!is.na(Pan_Ratio_BM_Avail) & !is.na(Pan_Ratio_BM_Cons)) %>%
+  group_by(Study_Code) %>%
+  filter(n() >= 3) %>%
+  ungroup()
+
+halfofpapers.panratio.3$Pan_Ratio_BM_Avail <- as.numeric(halfofpapers.panratio.3$Pan_Ratio_BM_Avail)
+halfofpapers.panratio.3$Pan_Ratio_BM_Cons <- as.numeric(halfofpapers.panratio.3$Pan_Ratio_BM_Cons)
+
+# Ensure Study_Code is a factor
+halfofpapers.panratio.3$Study_Code <- as.factor(halfofpapers.panratio.3$Study_Code)
+
+
+# Plot with smoothing lines for each Study_Code
+pan.ratio.bm.plot.3 <- ggplot(halfofpapers.panratio.3) +
+ geom_point(aes(x = Pan_Ratio_BM_Avail, y = Pan_Ratio_BM_Cons, col = Study_Code)) +
+  
+  # Fit a smoothing curve for each Study_Code
+  geom_smooth(aes(x = Pan_Ratio_BM_Avail, y = Pan_Ratio_BM_Cons, col = Study_Code), method = "loess", se = FALSE, span = 0.8) + 
+  
+  geom_abline(intercept = 0, slope = 1, linetype="dashed") +
+  
+  theme_classic() + 
+  theme(text = element_text(size = 5)) +
+  
+  # Discrete color scale for Study_Code
+  scale_colour_viridis(begin = 0, end = 1, option= "turbo", discrete = TRUE, na.translate = FALSE) +
+  
+  # Axis labels and plot title
+  xlab("Ratio Biomass Available") + 
+  ylab("Ratio Biomass Consumed") + 
+  labs(colour = "Study and Area") +
+  ylim(0, max(halfofpapers.panratio.3$Pan_Ratio_BM_Cons, na.rm = TRUE))
+
+# Save the plot
+ggsave("plots/pan-ratio-BM_StudyCode_ind.png", height = 5, width = 7, dpi = 700)
+
+# Show the plot
+pan.ratio.bm.plot.3
+```
+
+```{r}
+halfofpapers$Log_Pan_Ratio_BM_Avail <- log10(halfofpapers$Pan_Ratio_BM_Avail)
+halfofpapers$Log_Pan_Ratio_BM_Cons <- log10(halfofpapers$Pan_Ratio_BM_Cons)
+
+halfofpapers.panratio.3.log <- halfofpapers%>%
+  filter(!is.na(Log_Pan_Ratio_BM_Avail) & !is.na(Log_Pan_Ratio_BM_Cons)) %>%
+  group_by(Study_Code) %>%
+  filter(n() >= 3) %>%
+  ungroup()
+
+halfofpapers.panratio.3.log$Log_Pan_Ratio_BM_Avail <- as.numeric(halfofpapers.panratio.3.log$Log_Pan_Ratio_BM_Avail)
+halfofpapers.panratio.3.log$Log_Pan_Ratio_BM_Cons <- as.numeric(halfofpapers.panratio.3.log$Log_Pan_Ratio_BM_Cons)
+
+# Ensure Study_Code is a factor
+halfofpapers.panratio.3.log$Study_Code <- as.factor(halfofpapers.panratio.3.log$Study_Code)
+
+log
+# Plot with smoothing lines for each Study_Code
+pan.ratio.bm.plot.4 <- ggplot(halfofpapers.panratio.3.log) +
+ geom_point(aes(x = Log_Pan_Ratio_BM_Avail, y = Log_Pan_Ratio_BM_Cons, col = Study_Code)) +
+  
+  # Fit a smoothing curve for each Study_Code
+  geom_smooth(aes(x = Log_Pan_Ratio_BM_Avail, y = Log_Pan_Ratio_BM_Cons, col = Study_Code), method = "loess", se = FALSE, span = 20) + 
+  
+  geom_abline(intercept = 0, slope = 1, linetype="dashed") +
+  
+  theme_classic() + 
+  theme(text = element_text(size = 5)) +
+  
+  # Discrete color scale for Study_Code
+  scale_colour_viridis(begin = 0, end = 1, option= "turbo", discrete = TRUE, na.translate = FALSE) +
+  
+  # Axis labels and plot title
+  xlab("log Ratio Biomass Available") + 
+  ylab("log Ratio Biomass Consumed") + 
+  labs(colour = "Study and Area") +
+  ylim(0, max(halfofpapers.panratio.3.log$Log_Pan_Ratio_BM_Cons, na.rm = TRUE))
+
+# Save the plot
+ggsave("plots/log-pan-ratio-BM_StudyCode_ind.png", height = 5, width = 7, dpi = 700)
+
+# Show the plot
+pan.ratio.bm.plot.4
+```
+
+
+```{r}
+# Convert to numeric
+halfofpapers$Pan_Ratio_BM_Avail <- as.numeric(halfofpapers$Pan_Ratio_BM_Avail)
+halfofpapers$Pan_Ratio_BM_Cons <- as.numeric(halfofpapers$Pan_Ratio_BM_Cons)
+
+pan.ratio.bm.plot.1 <- ggplot(halfofpapers) +
+  geom_point(aes(x = Pan_Ratio_BM_Avail, y = Pan_Ratio_BM_Cons, col = Pantheria_kg_cat)) + 
+  geom_abline(intercept = 0, slope = 1, linetype = "dashed") + # constant 1:1 line
+  theme_classic() + 
+  theme(text = element_text(size = 15)) +
+  scale_colour_viridis_d(begin = 0.1, end = 0.9, option = "inferno") + 
+  
+  # Set axis limits and breaks if the output graph doesn't automatically set appropriate axes
+  scale_x_continuous(limits = c(0, 60)) +  
+  scale_y_continuous(limits = c(0,50)) +
+  
+  xlab("Ratio Biomass Available") + 
+  ylab("Ratio Biomass Consumed") + 
+  labs(colour = "Species kg")
+
+# Save the plot
+ggsave("plots/pan-ratio-BM_Pantheriakg_category1.png", height = 5, width = 7, dpi = 700)
+
+# Show the plot
+pan.ratio.bm.plot.1
+```
+
+```{r}
+halfofpapers.wild <- halfofpapers %>%
+  filter(Livestock_Wild != "Livestock") 
+
+pan.ratio.bm.plot.2 <- ggplot(halfofpapers.wild) +
+  geom_point(aes(x = Pan_Ratio_BM_Avail, y = Pan_Ratio_BM_Cons, col = Pantheria_kg_cat)) + 
+  geom_abline(intercept = 0, slope = 1, linetype = "dashed") + # constant 1:1 line
+  theme_classic() + 
+  theme(text = element_text(size = 15)) +
+  scale_colour_viridis_d(begin = 0.1, end = 0.9, option = "inferno") + 
+  
+  # Set axis limits and breaks if the output graph doesn't automatically set appropriate axes
+  scale_x_continuous(limits = c(0, 20)) +  
+  scale_y_continuous(limits = c(0,50)) +
+  
+  xlab("Ratio Biomass Available") + 
+  ylab("Ratio Biomass Consumed") + 
+  labs(colour = "Species kg")
+
+# Save the plot
+ggsave("plots/pan-ratio-BM_Wild only.png", height = 5, width = 7, dpi = 700)
+
+# Show the plot
+pan.ratio.bm.plot.2
+```
+

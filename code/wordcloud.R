@@ -4,7 +4,8 @@
 libs <- c('wordcloud',
           'wordcloud2',
           'ggplot2',
-          'RColorBrewer','wesanderson',
+          'RColorBrewer',
+          'wesanderson',
           'tm', 'tidyr')
 lapply(libs, require, character.only = TRUE)
 
@@ -37,7 +38,9 @@ text
 dtm <- TermDocumentMatrix(text) 
 matrix <- as.matrix(dtm) 
 words <- sort(rowSums(matrix),decreasing=TRUE) 
-df <- data.frame(word = names(words),freq=words)
+preyswitch_df <- data.frame(word = names(words),freq=words)
+
+write_csv(preyswitch_df, "preyswitch_words.csv")
 
 ####create wordcloud
 set.seed(1989) # for reproducibility 
@@ -59,7 +62,7 @@ wordcloud(words = df$word, freq = df$freq, min.freq = 2,
 png('plots/wordcloud.png', width = 3000, height = 3000, res=1000, units="px")
 
 wordcloud(words = df$word, freq = df$freq, min.freq = 1,
-          max.words=100, random.order=FALSE, rot.per=0.35,
+          max.words=150, random.order=FALSE, rot.per=0.35,
           scale=c(2,0.5),colors = c( "#2E4052", "#BDD9BF", "#FFC857","#E5323B","#929084", "#A997DF"))
 
 

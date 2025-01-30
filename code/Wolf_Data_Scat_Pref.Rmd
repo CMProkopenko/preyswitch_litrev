@@ -31,6 +31,9 @@ scatpref <- scatpref.messy %>%
 ```{r}
 sort(unique(scatpref$Prey_Taxa_Valid))
 ```
+```{r}
+
+```
 
 
 ```{r}
@@ -70,7 +73,8 @@ scat.pref.spp.1 <- ggplot(scatpref.clean) +
  geom_point(aes(x = Pan_Prop_BM_Avail, y = Pan_Prop_BM_Cons, col = Prey_Taxa_Valid)) +
   
   # Fit a smoothing curve for each Study_Code
-  geom_smooth(aes(x = Pan_Prop_BM_Avail, y = Pan_Prop_BM_Cons, col = Prey_Taxa_Valid), method = "loess", se = FALSE, span = 2) + 
+  geom_smooth(aes(x = Pan_Prop_BM_Avail, y = Pan_Prop_BM_Cons, col = Prey_Taxa_Valid), method = "gam", 
+              formula = y ~ s(x, bs = "cs", fx = TRUE, k = 20, se = FALSE, span = 2)) + 
   
   geom_abline(intercept = 0, slope = 1, linetype="dashed") +
   
@@ -108,7 +112,7 @@ scat.pref.spp.2 <- ggplot(scatpref.clean) +
   geom_abline(intercept = 0, slope = 1, linetype="dashed") +
   
   theme_classic() + 
-  theme(text = element_text(size = 10)) +
+  theme(text = element_text(size = 5)) +
   
   # Discrete color scale for Prey_Taxa_Valid
   scale_colour_viridis(begin = 0, end = 1, option= "turbo", discrete = TRUE, na.translate = FALSE) +
@@ -177,6 +181,11 @@ wild.scat <- wild.scat.unfinished %>%
 # View the final data frame
 wild.scat
 ```
+```{r}
+sort(unique(wild.scat$Prey_Taxa_Valid))
+```
+
+
 ```{r, Plot of Propotion kg available vs Proportion kg consumed, using on wild prey species} 
 # Ensure Prey_Taxa_Valid is a factor
 wild.scat$Prey_Taxa_Valid <- as.factor(wild.scat$Prey_Taxa_Valid)
@@ -376,3 +385,4 @@ ggsave("plots/scat.elk.prop.plot.png", height = 5, width = 7, dpi = 700)
 scat.elk.prop.plot
 ```
 
+png('plots/wordcloud.png', width = 3000, height = 3000, res=1000, units="px")

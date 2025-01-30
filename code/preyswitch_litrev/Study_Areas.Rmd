@@ -1,12 +1,12 @@
 New code chunk shortcut= ctrl+alt+I
-```{r}
+```{r, echo=FALSE}
 libs <- c('data.table', 'readr', 'dplyr', 'lubridate', 'tidyr', 'ggplot2','stringr', 'tibble', 'patchwork', 'performance','see','viridis','skimr', 'janitor','tidyverse', 'naniar', 'knitr', 'XML', 'xml2', 'Rtools', 'geosphere', 'ggmap', 'tmap', 'sf', 'rnaturalearth', 'rnaturalearthdata')
 lapply(libs, require, character.only = TRUE)
 
 ```
 
-load data
-```{r}
+
+```{r, load data}
 sa_kml_file <- "C:/Users/blott/OneDrive/Documents/Github/preyswitch_litrev/data/Study_Areas_By_Code.kml"
 # Load the KML file
 sa_kml_data <- read_xml(sa_kml_file)
@@ -17,8 +17,8 @@ placemarks <- xml_find_all(sa_kml_data, "//kml:Placemark", ns = ns)
 
 ```
  
-##Create a dataframe with the placemark (study area) name and centroid Lat and Long
-```{r}
+
+```{r, Create a dataframe with the placemark (study area) name and centroid Lat and Long}
 # Function to process coordinates into a matrix
 process_coordinates <- function(coordinate_string) {
     coords <- strsplit(coordinate_string, " ")[[1]]
@@ -70,7 +70,7 @@ print(Centroid_data)
 ```
 
 
-```{r}
+```{r, Use the centroids to make a map}
 # Convert the Centroid_data to an sf object
 centroids_sf <- st_as_sf(Centroid_data, coords = c("Centroid_Longitude", "Centroid_Latitude"), crs = 4326)
 
@@ -83,7 +83,7 @@ tm_shape(centroids_sf) +
 ```
 
 
-```{r}
+```{r, map version 2}
 # Convert the Centroid_data to an sf object
 centroids_sf <- st_as_sf(Centroid_data, coords = c("Centroid_Longitude", "Centroid_Latitude"), crs = 4326)
 
@@ -101,13 +101,14 @@ ggplot() +
 ###would be cool to add an overlay of wolf distributions####
 
 ```
-##Load the polygon data for the study areas and ecoregions
-```{r}
+
+
+```{r, ##Load the polygon data for the study areas and ecoregions}
 # Load your original polygon KML file
-study_area <- st_read("C:/Users/blott/OneDrive/Documents/Github/preyswitch_litrev/data/Study_Areas_By_Code.kml") 
+study_area <- st_read("~/Github/preyswitch_litrev/data/Study_Areas_By_Code.kml") 
 
 # Load the ecoregion file
-ecoregions <- st_read("C:/Users/blott/OneDrive/Documents/Github/preyswitch_litrev/data/Terrestrial_Ecoregions.geojson")  
+ecoregions <- st_read("~/Github/preyswitch_litrev/data/ResolveEcoregions2017.shp")  
 
 ```
 
@@ -149,7 +150,8 @@ for (j in 1:nrow(ecoregions)) {
 # Put it in a data frame (the 2 is the number of decimal places for the percentage)
    study_area_ecoregions <- rbind(study_area_ecoregions, data.frame(
         Study_Area_Name = current_study_area$Name,
-        Ecoregion_Name = current_ecoregion$ECO_CODE, 
+        Ecoregion_ID = current_ecoregion$ECO_ID, 
+        Ecoregion_Name = current_ecoregion$ECO_NAME, 
         Overlap_Percentage = round(percentage_overlap, 2)  
       ))
     }
@@ -163,7 +165,7 @@ print(study_area_ecoregions)
 
 ## Save it as a csv
 ```{r}
-write.csv(study_area_ecoregions, "/data/Study_Area_Ecoregions_Dataframe", row.names = FALSE)
+write.csv(study_area_ecoregions, "~/Github/preyswitch_litrev/data/Study_Area_Ecoregions_Dataframe.csv", row.names = FALSE)
 ```
 
 ```{r}

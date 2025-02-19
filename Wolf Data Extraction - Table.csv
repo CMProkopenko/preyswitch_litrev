@@ -1,7 +1,0 @@
-Prey_Category ,Size_Class,Positive_Pref,Negative_Prefs,Total_Occur
-Livestock,Small,0,1,1
-Livestock,Medium,5,9,14
-Livestock,Large,4,13,17
-Wild,Small,7,8,15
-Wild,Medium,13,12,25
-Wild,Large,7,9,16

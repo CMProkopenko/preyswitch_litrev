@@ -1,0 +1,77 @@
+Paper ID,Study Area,"Study Area 
+(km²)",Prey Identity ,"Prey Taxonomic
+Name",Years,# ind,Density (#/km²),± SE,Avg. Mass (kg),"Biomass Available 
+(kg/km²)","Proportion Items 
+Available","Proportion Biomass
+Available ",Scat Sample Size,# consumed,# consumed/km²,"Mean percent 
+volume (%)","Ingested biomass 
+(kg/scat)","Biomass Consumed
+Method","Rel. Number of 
+Items Consumed (%)","Rel. Biomass
+ Consumed ","Absolute FO 
+(%)","Corrected FO item 
+per scat (%)","Relative FO
+(%)","Manly-Chesson 
+Index Ni Value","Manly-Chesson 
+Index Biomass Value",m, 1/m,"Standard Manly-Chesson 
+Equation used?",Jacob's index,"Standard Jacob 
+Used?",Livestock or Wild?,"Fight? Flight? 
+Guarded?",Notes
+Chetri 2017,Central Himalayas,5000,Bharal,,,29850,5.97,0.1,,202.98,0.13839,0.07382621125,57,,,,,y=0.439+0.008x,1.76,4.09,,,4.42,,,,,,,,Wild,,Cliff-dwelling
+Chetri 2017,Central Himalayas,5000,Himalayan Tahr,,,4250,0.85,0.22,,42.50,0.0197,0.01545774942,57,,,,,y=0.439+0.008x,0,0,,,0,,,,,,,,Wild,,Cliff-dwelling
+Chetri 2017,Central Himalayas,5000,Tibetan argali,,,1200,0.24,0.4,,19.20,0.00556,0.006983265622,57,,,,,y=0.439+0.008x,2.3,12.57,,,8.95,,,,,,,,Wild,,Plains-dwelling
+Chetri 2017,Central Himalayas,5000,Tibetan gazelle,,,450,0.09,0.14,,1.80,0.00209,0.0006546811521,57,,,,,y=0.439+0.008x,6.31,8.62,,,11.05,,,,,,,,Wild,,Plains-dwelling
+Chetri 2017,Central Himalayas,5000,Kiang,,,1250,0.25,0.12,,25.00,0.0058,0.009092793779,57,,,,,y=0.439+0.008x,2.56,17.48,,,10.84,,,,,,,,Wild,,Plains-dwelling
+Chetri 2017,Central Himalayas,5000,Goat,,,81950,16.39,0.16,,409.75,0.37993,0.14903089,57,,,,,y=0.439+0.008x,4.15,7.1,,,8.53,,,,,,,,Livestock,"semi-guarded, dispersed in pasture",Plains-dwelling
+Chetri 2017,Central Himalayas,5000,Sheep,,,31800,6.36,0.09,,190.80,0.14743,0.06939620212,57,,,,,y=0.439+0.008x,0.53,1.09,,,1.23,,,,,,,,Livestock,"semi-guarded, less dispersed in pasture",Plains-dwelling
+Chetri 2017,Central Himalayas,5000,Horse,,,6200,1.24,0.06,,136.40,0.02874,0.04961028286,57,,,,,y=0.439+0.008x,1.2,9.03,,,5.26,,,,,,,,Livestock,unattended in pastures,Plains-dwelling
+Chetri 2017,Central Himalayas,5000,Yak/Chaur,,,54600,10.92,0.14,,1638.00,0.25313,0.5957598484,57,,,,,y=0.439+0.008x,0.87,8.92,,,4.18,,,,,,,,Livestock,"unattented, too large",Plains-dwelling
+Chetri 2017,Central Himalayas,5000,Lulu Cow,,,4150,0.83,0.04,,83.00,0.01924,0.03018807535,57,,,,,y=0.439+0.008x,1.09,7.42,,,4.6,,,,,,,,Livestock,,Plains-dwelling
+Ståhlberg 2017,South-central Scandinavia,17370,Moose ,Alces alces,1999-2006,21886.2,1.26,,160.6,202.356,,,,,,,,y=0.439+0.008x,,,,,,,0.79,2,0.5,Yes ,,,Wild,,
+Ståhlberg 2017,South-central Scandinavia,17370,Roe Deer,Capreolus capreolus,1999-2006,9900.9,0.57,,18.8,10.716,,,,,,,,y=0.439+0.008x,,,,,,,0.21,2,0.5,Yes ,,,Wild,,
+Ståhlberg 2017,Tuscany ,8000,Wild boar,Sus scrofa ,2005-2009,55280,6.91,,33.8,233.558,,,,,,,,y=0.439+0.008x,,,,,,,0.36,5,0.2,Yes ,,,Wild,,
+Ståhlberg 2017,Tuscany ,8000,Roe Deer,Capreolus capreolus,2005-2009,200800,25.1,,22.4,562.24,,,,,,,,y=0.439+0.008x,,,,,,,0.063,5,0.2,Yes ,,,Wild,,
+Ståhlberg 2017,Tuscany ,8000,Red Deer,Cervus elaphus,2005-2009,15280,1.91,,70.8,135.228,,,,,,,,y=0.439+0.008x,,,,,,,0.169,5,0.2,Yes ,,,Wild,,
+Ståhlberg 2017,Tuscany ,8000,Fallow Deer,Dama dama,2005-2009,22880,2.86,,39.7,113.542,,,,,,,,y=0.439+0.008x,,,,,,,0.074,5,0.2,Yes ,,,Wild,,
+Ståhlberg 2017,Tuscany ,8000,Moufflon,Ovis orientalis,2005-2009,39040,4.88,,23.4,114.192,,,,,,,,y=0.439+0.008x,,,,,,,0.33,5,0.2,Yes ,,,Wild,,
+Werhahn 2019,Humla,384,Yak/Cow,Bos grunniens / Bos grunniens-Bos taurus,2015,1885.44,4.91,0.32,237.5,1166.13,0.5425414365,0.6273,69,,,,,,1,0.173,,,14.3,,,,,,,,Livestock,Semi-guarded,Small herds 
+Werhahn 2019,Humla,384,Horse/Mule,Equus ferus caballus,2015,261.12,0.68,0.12,350.5,238.35,0.07513812155,0.1282,69,,,,,,0,0,,,0,,,,,,,,Livestock,Unguarded,Small herds 
+Werhahn 2019,Humla,384,Goat,Capra hircus,2015,576,1.5,0.26,27.5,41.25,0.1657458564,0.0222,69,,,,,,0,0,,,0,,,,,,,,Livestock,,Larger herds
+Werhahn 2019,Humla,384,Kiang,Equus kiang,2015,433.92,1.13,0.16,325,367.25,0.1248618785,0.1976,69,,,,,,1.7,0.529,,,20,,,,,,,,Wild ,,Mass range= 250-400kg. Plains-dwelling.
+Werhahn 2019,Humla,384,Naur,Pseudois nayaur,2015,318.72,0.83,0.09,55.3,45.87,0.09171270718,0.0247,69,,,,,,1,0.052,,,10,,,,,,,,Wild,,Mass range = 35-75kg. Cliff-dwelling .
+Werhahn 2019,Dolpa,1088,Yak/cow,Bos grunniens / Bos grunniens-Bos taurus,2016,10009.6,9.2,0.3,237.5,2185,,0.6037,77,,,,,,2.3,0.662,,,57,,,,,,,,Livestock,Semi-guarded,Small-large herds
+Werhahn 2019,Dolpa,1088,Horse/mule,Equus ferus caballus,2016,2306.56,2.12,0.15,350,742,,0.205,77,,,,,,0.2,0.101,,,3.9,,,,,,,,Livestock,Unguarded,Small herds 
+Werhahn 2019,Dolpa,1088,Goat,Capra hircus,2016,24044.8,22.1,0.4,27.5,607.75,,0.1679,77,,,,,,0.7,0.022,,,11.7,,,,,,,,Livestock,Guarded,Larger herds
+Werhahn 2019,Dolpa,1088,Naur,Pseudois nayaur,2016,1675.52,1.54,0.12,55,84.7,,0.0234,77,,,,,,1.7,0.11,,,24.7,,,,,,,,Wild,,Mass range = 35-75kg. Cliff-dwelling .
+Werhahn 2019,KCA,368,Yak/cow,Bos grunniens / Bos grunniens-Bos taurus,2016,3128,8.5,0.46,237.5,2018.75,,0.8736,13,,,,,,1,0.63,,,46.2,,,,,,,,Livestock,Semi-guarded,Small-large herds
+Werhahn 2019,KCA,368,Horse/mule,Equus ferus caballus,2016,77.28,0.21,0.08,355,74.55,,0.0323,13,,,,,,0.1,0.067,,,15.4,,,,,,,,Livestock,Unguarded,Small herds 
+Werhahn 2019,KCA,368,Goat,Capra hircus,2016,658.72,1.79,0.29,27.5,49.23,,0.0213,13,,,,,,0,0,,,0,,,,,,,,Livestock,Guarded,Larger herds
+Werhahn 2019,KCA,368,Naur,Pseudois nayaur,2016,1126.08,3.06,0.27,55,168.3,,0.0728,13,,,,,,1.7,0.257,,,76.9,,,,,,,,Wild,,Mass range = 35-75kg. Cliff-dwelling .
+Werhahn 2019,Namsai,175,Yak/Cow ,Bos grunniens / Bos grunniens-Bos taurus,2017,3640,20.8,1.95,237.5,4940,,0.7909,9,,,,,,0.6,0.29,,,,,,,,,,,Livestock,Semi-guarded,Small-large herds
+Werhahn 2019,Namsai,175,Naur,Pseudois nayaur,2017,3325,19,1.42,55,1045,,0.1673,9,,,,,,0.04,0.005,,,,,,,,,,,Wild,,Mass range = 35-75kg. Cliff-dwelling .
+Werhahn 2019,Namsai,175,White-lipperd deer,Cervus albirostris,2017,276.5,1.58,0.4,165,260.7,,0.0417,9,,,,,,0,0,,,,,,,,,,,Wild,,
+Werhahn 2019,Namsai,175,Tibetan Gazelle,Procapra picticaudata,2017,0,0,,14.1,0,,0,9,,,,,,7.6,0.23,,,,,,,,,,,Wild,,Mass range= 13.2-15kg. Plains-dwelling
+Werhahn 2019,Zhaqing,452,Yak/Cow ,Bos grunniens / Bos grunniens-Bos taurus,2017,9401.6,20.8,1.95,237.5,4940,,0.9481,8,,,,,,22.7,0.929,,,,,,,,,,,Livestock,Semi-guarded,Small-large herds
+Werhahn 2019,Zhaqing,452,White-lipperd deer,Cervus albirostris,2017,343.52,0.76,0.16,165.2236842,125.57,,0.0241,8,,,,,,0,0,,,,,,,,,,,Wild,,
+Werhahn 2019,Zhaqing,452,Tibetan gazelle,Procapra picticaudata,2017,357.08,0.79,0.27,14.06329114,11.11,,0.0021,8,,,,,,5.9,0.0143,,,,,,,,,,,Wild,,Mass range= 13.2-15kg. Plains-dwelling
+Werhahn 2019,Zhaqing,452,Naur,Pseudois nayaur,2017,1098.36,2.43,0.27,55,133.65,,0.0257,8,,,,,,0,0,,,,,,,,,,,Wild,,Mass range = 35-75kg. Cliff-dwelling .
+Figueiredo 2020,Montesinho Natural Park,350,Roe deer,Capreolus capreolus,2017-2019,,1.23,,24,,,,85,,,,,y=0.439+0.008x,,0.233,44,,39,,,,,,0.71,Yes,Wild,,biomass calculated using floyd modified weaver and multiplying by number of scats containing that item
+Figueiredo 2020,Montesinho Natural Park,350,Red deer,Cervus elaphus,2017-2019,,5.81,,100,,,,85,,,,,y=0.439+0.008x,,0.273,27,,24,,,,,,0.05,Yes,Wild ,,biomass calculated using floyd modified weaver and multiplying by number of scats containing that item
+Figueiredo 2020,Montesinho Natural Park,350,Cattle,Bos taurus,2017-2019,,0.54,,,,,,85,,,,,y=0.439+0.008x,,0,0,,0,,,,,,-1,Yes,Livestock,guarded,biomass calculated using floyd modified weaver and multiplying by number of scats containing that item. 
+Figueiredo 2020,Montesinho Natural Park,350,Domestic pig,Sus scrofa domesticus,2017-2019,,0.01,,,,,,85,,,,,y=0.439+0.008x,,0,0,,0,,,,,,-1,Yes,Livestock,,biomass calculated using floyd modified weaver and multiplying by number of scats containing that item
+Figueiredo 2020,Montesinho Natural Park,350,Sheep,Ovis aries,2017-2019,,9.21,,,,,,85,,,,,y=0.439+0.008x,,0,0,,0,,,,,,-1,Yes,Livestock,guarded,biomass calculated using floyd modified weaver and multiplying by number of scats containing that item
+Figueiredo 2020,Montesinho Natural Park,350,Domestic goat,Capra hircus,2017-2019,,0.93,,28.5,,,,85,,,,,y=0.439+0.008x,,0.02668,5,,4,,,,,,-0.21,Yes,Livestock,semi-guarded,biomass calculated using floyd modified weaver and multiplying by number of scats containing that item. negative selection likely due to increased livestock protection measures.
+Hosseini-Zavarei 2013,Ghamishlou,1130,Persian gazelle,Gazella subgutturosa,2007-2009,2400,,,27.5,,,,132,33,,,0.9,y=0.38+0.02x,,27,31,25,,,,,,,,,Wild,,
+Hosseini-Zavarei 2013,Ghamishlou,1130,Esfahan wild sheep,Ovis orientalis,2007-2009,2400,,,34, ,,,132,17,,,1.1,y=0.38+0.02x,,15.9,17,13,,,,,,,,,Wild ,,
+Hosseini-Zavarei 2013,Ghamishlou,1130,Persian wild goat,Capra aegagrus,2007-2009,100,,,36.0,,,,132,9.5,,,1.1,y=0.38+0.02x,,9.2,1,7,,,,,,,,,Wild,,
+Hosseini-Zavarei 2013,Ghamishlou,1130,Domestic sheep and goat,,2007-2009,13000,,,35,,,,132,49.5,,,1.1,y=0.38+0.02x,,47.1,45,38,,,,,,,,,Livestock,Guarded,"13000 in 30 herds. Allowed to graze in pastures in the Wildlife Refuge for a 100-day period in winter (January–March), but are not allowed to enter the National Park. Guarded by herd dogs."
+Capitani 2004,Susa Valley,120,Wild boar,Sus scrofa,2000-2001,120,1,,,,,,194,,,1.7,,,,,2.1,,,,,,,,,,,,present below 2000m a.s.l.
+Capitani 2004,Susa Valley,120,Cervids,See notes,2000-2001,1140,9.5,,,,,,194,,,69.7,,,,,74.7,,,,,,,,,,,,"Cervids = Roe deer (Capreolus capreolus), red deer (Cervus elaphus), and fallow deer (Dama dama). Roe deer present below 2000m a.s.l."
+Capitani 2004,Susa Valley,120,Bovids,See notes,2000-2001,840-960,7.0-8.0,,,,,,194,,,20,,,,,20.6,,,,,,,,,,,,Bovids = mouflon (Ovis ammon musimon) and chamois (Rupicapra rupicapra). Mouflon present close to study area
+Capitani 2004,Pratomagno,110,Wild boar,Sus scrofa,1999-2001,561,5.1,,,,,,355,,,80.8,,,,,87.3,,,,,,,,,,,,
+Capitani 2004,Pratomagno,110,Cervids,See notes,1999-2001,2497,23.1,,,,,,355,,,14.1,,,,,20.6,,,,,,,,,,,,"Cervids = Roe deer (Capreolus capreolus), red deer (Cervus elaphus), and fallow deer (Dama dama). Fallow deer limited to 1/3 of the area"
+Capitani 2004,Pratomagno,110,Bovids,See notes,1999-2001,?,?,,,,,,355,,,0.2,,,,,0.3,,,,,,,,,,,,"Bovids = mouflon (Ovis ammon musimon) and chamois (Rupicapra rupicapra). Mouflon absent except for ""an isolated hear of a few individuals""."
+Capitani 2004,Cecina Valley,25,Wild boar,Sus scrofa,2000-2001,375,15,,,,,,118,,,15.9,,,,,20.3,,,,,,,,,,,,
+Capitani 2004,Cecina Valley,25,Cervids ,See notes,2000-2001,550,22,,,,,,118,,,40.5,,,,,45.8,,,,,,,,,,,,"Cervids = Roe deer (Capreolus capreolus), red deer (Cervus elaphus), and fallow deer (Dama dama)"
+Capitani 2004,Cecina Valley,25,Bovids,See notes,2000-2001,100,4,,,,,,118,,,33,,,,,34.7,,,,,,,,,,,,Bovids = mouflon (Ovis ammon musimon) and chamois (Rupicapra rupicapra)
+,,,,,1998-2000,,,,,,,,467,,,,,y=0.439+0.008x,,,,,,,,,,,,,,,

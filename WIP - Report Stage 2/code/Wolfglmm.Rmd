@@ -1,0 +1,197 @@
+---
+title: "GLMM"
+author: "RB"
+date: "2025-11-04"
+output: html_document
+---
+
+
+```{r}
+libs <- c('Matrix','lme4','glmmTMB', 'ggeffects','data.table', 'readr', 'dplyr', 'lubridate', 'tidyr', 'ggplot2','stringr', 'tibble', 'patchwork', 'performance','see','viridis','skimr', 'janitor','tidyverse', 'naniar', 'knitr')
+lapply(libs, require, character.only = TRUE)
+```
+
+```{r}
+ScatPref_Nov2025 <- read_csv("C:/Users/blott/OneDrive/Documents/Github/preyswitch_litrev/data/ScatPref_Nov2025.csv")
+StudyArea_Nov2025 <- read_csv("C:/Users/blott/OneDrive/Documents/Github/preyswitch_litrev/data/StudyArea_Nov2025.csv")
+```
+
+
+```{r}
+scatpref.unfinished <- ScatPref_Nov2025 %>%
+  select(Study_Code, Paper_ID, Study_Area, Area, Prey_Item, Prey_Taxa_Valid, Period, Num_Ind, Ratio_Ind_Avail, Prop_Ind_Avail, Density, Avg_Mass_kg, Pantheria_kg, Orig_BM_Avail, Orig_Prop_BM_Avail, Scat_n_Tot, Scat_n_Prey, Abs_FO, Rel_FO, Mean_Perc_Vol, Orig_BM_Consumed, Orig_Prop_BM_Consumed, Livestock_Wild, Defense, n_Prey_Species, Wild_Ung_Avail_n) %>%
+  filter(!Livestock_Wild %in%c("Feral", "Livestock")) %>%
+  group_by(Study_Code, Period) %>%
+  filter(n() >= 2) %>%
+  ungroup() 
+
+#need to remove Chavez 2005 1997-1999 Spring-Autumn
+#davis 2012 needs to be dealt with
+#Gazzola 2007 needs to be dealt with
+
+studyarea <- StudyArea_Nov2025 %>%
+  mutate(Realm_Olson = ifelse(is.na(Realm_Olson), "NA", Realm_Olson),
+ Realm_OneEarth = ifelse(is.na(Realm_OneEarth), "NA", Realm_OneEarth)) %>%
+  select(Study_Code, Study_Country, Realm_Olson, Realm_OneEarth, Biome_Olson, Bioregion_Olson, Bioregion_OneEarth, Eco_Code_Olson, Eco_Num_Olson, Ecoregion_Olson, Suprarealm_OneEarth, Subrealm_OneEarth, Ecoregion_OneEarth2)
+
+
+scatpref <- scatpref.unfinished %>%
+  left_join(studyarea, by = "Study_Code")
+
+```
+
+```{r}
+scatpref$Mass_Cat <- cut(scatpref$Pantheria_kg,
+                                     breaks = c(0, 20.5, 80.5, 150.5, 300.5, 500.5, Inf),  
+                                     labels = c("≤ 20 kg", "20-80 kg", "80-150 kg", "150-300 kg", "300-500 kg", "≥ 500 kg"), 
+                                     right = FALSE) # Use right=FALSE for inclusive lower bounds
+
+
+scatpref <- scatpref %>%
+   mutate(
+   Area = as.numeric(Area),
+   Prop_Ind_Avail = as.numeric(Prop_Ind_Avail),
+   Num_Ind = as.numeric(Num_Ind),
+   Density = as.numeric(Density),
+    Pantheria_kg = as.numeric(Pantheria_kg),
+    Mass_Cat = as.factor(Mass_Cat),
+    Study_Code = as.factor(Study_Code),
+    Prey_Taxa_Valid = as.factor(Prey_Taxa_Valid),
+    Scat_n_Prey = as.numeric(scatpref$Scat_n_Prey),
+    Scat_n_Tot = as.numeric(scatpref$Scat_n_Tot),
+    Abs_FO = as.numeric(scatpref$Abs_FO),
+    Rel_FO = as.numeric(scatpref$Rel_FO),
+   Defense = as.factor(Defense),
+   n_Prey_Species = as.factor(n_Prey_Species),
+   Wild_Ung_Avail_n = as.factor(Wild_Ung_Avail_n),
+   Study_Code = as.factor(Study_Code),
+   Study_Country = as.factor(Study_Country),
+  Realm_Olson = as.factor(Realm_Olson),
+  Realm_OneEarth = as.factor(Realm_OneEarth),
+  Biome_Olson = as.factor(Biome_Olson),
+  Bioregion_Olson = as.factor(Bioregion_Olson),
+  Bioregion_OneEarth = as.factor(Bioregion_OneEarth),
+  Eco_Code_Olson = as.factor(Eco_Code_Olson),
+  Eco_Num_Olson = as.factor(Eco_Num_Olson),
+  Ecoregion_Olson = as.factor(Ecoregion_Olson),
+  Ecoregion_OneEarth2 = as.factor(Ecoregion_OneEarth2),
+  Suprarealm_OneEarth = as.factor(Suprarealm_OneEarth),
+  Subrealm_OneEarth = as.factor(Subrealm_OneEarth)
+   )
+
+
+scatpref2 <- scatpref %>%
+  mutate(Num_Ind = if_else(is.na(Num_Ind) & !is.na(Density) & !is.na(Area),
+                            Density * Area, Num_Ind)) %>% 
+  mutate(Density = if_else(is.na(Density) & !is.na(Num_Ind) & !is.na(Area),
+                           Num_Ind / Area, Density)) %>%
+group_by(Study_Code, Period) %>%
+   mutate(Ind_Tot = sum(Num_Ind),
+    Density_Tot = sum(Density),
+    Prop_Ind_Avail_Sum = sum(Prop_Ind_Avail)) %>%
+  ungroup() %>%
+         # Proportion of individuals available
+         mutate(Prop_Ind = ifelse(is.na(Num_Ind), Prop_Ind_Avail/Prop_Ind_Avail_Sum, ifelse(!is.na(Num_Ind) & Ind_Tot>0, Num_Ind / Ind_Tot, NA_real_)),
+         # Ratio of individuals available
+         Pre_Ratio_Ind = ifelse(is.na(Num_Ind), 1 - Prop_Ind, ifelse(!is.na(Num_Ind) & !is.na(Ind_Tot), Ind_Tot - Num_Ind, NA_real_)),
+         Ratio_Ind = ifelse(is.na(Num_Ind), ifelse(!is.na(Prop_Ind) & !is.na(Pre_Ratio_Ind), Prop_Ind / Pre_Ratio_Ind, NA_real_),
+                            ifelse(!is.na(Num_Ind) & !is.na(Pre_Ratio_Ind) & Pre_Ratio_Ind>0, Num_Ind / Pre_Ratio_Ind, NA_real_))
+  ) %>%
+  group_by(Study_Code, Period, Prey_Taxa_Valid) %>%
+ # Proportion of Pantheria kg available
+   mutate(PropInd_x_Pan = Prop_Ind * Pantheria_kg) %>%
+  ungroup() %>%
+  group_by(Study_Code, Period) %>%
+   mutate(Sum_PropInd_x_Pan = sum(PropInd_x_Pan)) %>%
+  mutate(Prop_kg_Avail = PropInd_x_Pan / Sum_PropInd_x_Pan) %>%
+ # Ratio of Pantheria kg available
+  mutate(Pre_Ratio_kg_Avail = Sum_PropInd_x_Pan - PropInd_x_Pan) %>%
+  mutate(Ratio_kg_Avail = PropInd_x_Pan / Pre_Ratio_kg_Avail) %>%
+#Step 2: Calculate the Scat_n_Prey, new relative FO, BM consumed, and ratio and prop of BM consumed
+  #Make sure everything has a Scat_n_Prey if possible
+  group_by(Study_Code, Period, Prey_Taxa_Valid) %>%
+   mutate(Scat_n_Prey = ifelse(is.na(Scat_n_Prey), Scat_n_Tot*Abs_FO/100, Scat_n_Prey)) %>%
+  ungroup() %>%
+  #Calculate a new Relative_FO and a Ratio of Occurences
+   group_by(Study_Code, Period) %>%
+   mutate(Scat_items_Tot = sum(Scat_n_Prey)) %>%
+    mutate(New_Rel_FO = Scat_n_Prey/Scat_items_Tot) %>%
+    mutate(Pre_Ratio_Occ = Scat_items_Tot - Scat_n_Prey) %>%
+    mutate(Ratio_Occs = Scat_n_Prey/Pre_Ratio_Occ) %>%
+  #Calculate BM consumed (using (kg per scat)*Abs FO = 0.439+(0.008*Pan kg))
+  mutate(Abs_FO = ifelse(is.na(Abs_FO), Scat_n_Prey/Scat_n_Tot, Abs_FO)) %>%
+   mutate(kg_Per_Scat = 0.439+0.008*Pantheria_kg) %>%
+#Calculate the proportion and ratio of biomass consumed
+  mutate(Prey_Tot_kg_Cons = kg_Per_Scat*Scat_n_Prey) %>%
+  mutate(Tot_kg_Cons = sum(Prey_Tot_kg_Cons)) %>%
+  mutate(Prop_kg_Cons = Prey_Tot_kg_Cons/Tot_kg_Cons) %>%
+  mutate(Pre_Ratio_kg_Cons = Tot_kg_Cons - Prey_Tot_kg_Cons) %>%
+  mutate(Ratio_kg_Cons = Prey_Tot_kg_Cons/Pre_Ratio_kg_Cons) %>%
+  relocate(Mass_Cat, Ind_Tot, Density_Tot, Prop_Ind, Prop_kg_Avail, Ratio_kg_Avail, .before = Orig_BM_Avail) %>%
+  relocate(Prey_Tot_kg_Cons, Tot_kg_Cons, Prop_kg_Cons, Ratio_kg_Cons, .before = Mean_Perc_Vol)
+```
+
+```{r}
+#prep df for all wildlife model 
+scatpref.4den <- scatpref2 %>%
+  filter(!is.na(Prop_kg_Cons), !is.na(Prop_kg_Avail)) %>%
+  filter(Prop_kg_Avail >= 0.01) %>%
+    filter(Prop_kg_Cons >= 0.01) %>%
+  mutate(Study_Code = as.factor(Study_Code),
+    Prey_Taxa_Valid = as.factor(Prey_Taxa_Valid))# %>%
+  # filter(Prey_Taxa_Valid %in%c("Sus scrofa", "Alces alces", "Capreolus capreolus", "Cervus elaphus", "Dama dama"))
+
+###plot
+ggplot(scatpref.4den ) + geom_density(aes((Prop_kg_Cons), fill = Prey_Taxa_Valid), alpha = 0.5)
+
+ggplot(scatpref.4den ) + geom_density(aes((Prop_kg_Cons), fill = Study_Country), alpha = 0.5)
+
+ggplot(scatpref.4den ) + geom_density(aes((Prop_kg_Cons), fill = Ecoregion_OneEarth2), alpha = 0.5)
+
+ggplot(scatpref.4den ) + geom_density(aes((Prop_kg_Cons), fill = Bioregion_OneEarth), alpha = 0.5)
+
+ggplot(scatpref.4den ) + geom_density(aes((Prop_kg_Cons), fill = n_Prey_Species), alpha = 0.5)
+
+ggplot(scatpref.4den ) + geom_density(aes((Prop_kg_Cons), fill = Wild_Ung_Avail_n), alpha = 0.5)
+
+ggplot(scatpref.4den ) + geom_density(aes((Prop_kg_Cons), fill = Mass_Cat), alpha = 0.5)
+
+####zero makes you get an output for each variable not reference in the intercept, otherwise don't worry about including
+
+# model <- lmer(response ~ Variable1:Variable2 +(1|HigherLevelRandomEffect/LowerLevelRandomEffect) , data=datatable)
+#do response ~ 0 + Variable1:Variable2 if either variable is categorical
+# : is an interaction, * is another interaction, + is combined
+# summary(model)
+
+scatpref.4mw <- scatpref.4den  %>%
+   mutate(
+   n_Prey_Species = as.numeric(n_Prey_Species),
+   Wild_Ung_Avail_n = as.numeric(Wild_Ung_Avail_n)
+   )
+                
+```
+
+```{r}
+modelw.kga.pankg <- glm(Prop_kg_Cons ~ Prop_kg_Avail*Pantheria_kg, data= scatpref.4mw)
+summary(modelw.kga.pankg)
+
+plot(modelw.kga.pankg, which = 1)
+plot(modelw.kga.pankg, which = 2)
+
+confint(modelw.kga.pankg)
+```
+
+```{r}
+modelw.kga.mc.wun.def.ecooe <- glm(Prop_kg_Cons ~ Prop_kg_Avail + Mass_Cat + Wild_Ung_Avail_n + Defense + Ecoregion_OneEarth2, data= scatpref.4mw) #Proportion biomass consumed ~ Proportion biomass available + body size category + number of wild ungulate prey species + antipredator + ecoregion
+summary(modelw.kga.mc.wun.def.ecooe)
+
+plot(modelw.kga.mc.wun.def.ecooe, which = 1)
+plot(modelw.kga.mc.wun.def.ecooe, which = 2)
+
+confint(modelw.kga.mc.wun.def.ecooe)
+```
+
+```{r}
+
+```
+

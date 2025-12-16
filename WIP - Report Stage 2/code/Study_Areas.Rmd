@@ -7,18 +7,24 @@ lapply(libs, require, character.only = TRUE)
 
 
 ```{r, load data}
-sa_kml_file <- "C:/Users/blott/OneDrive/Documents/Github/preyswitch_litrev/data/Study_Areas_By_Code.kml"
-# Load the KML file
-sa_kml_data <- read_xml(sa_kml_file)
-ns <- xml_ns(sa_kml_data)
+sa_kml_file <- st_read("C:/Users/blott/OneDrive/Documents/Github/preyswitch_litrev/data/Study_Areas_By_Code.kml")
+sa_kml_data <- sa_kml_file %>%
+  filter(!Name %in%c("BAI12ADC", "BAI17ADC", "BEI24MAR", "CAI04SSV", "CHM24CED", "FEI19UCH", "FEI21MAR", "FEI23MAR", "LAI24bMAR", "LYH22REVIEW", "MAI95CFA", "MAI04CFA", "MEE17TRT", "MII12NAP", "SAD05GFJ", "SAD05TYN", "SAD12ILR", "SAD12SCA", "STG17TUS", "STG17SCA")) %>%
+  select(Name, geometry)
 
 # Extract all <Placemark> nodes (make sure the number in the list is the same as the number of study areas)
-placemarks <- xml_find_all(sa_kml_data, "//kml:Placemark", ns = ns) 
+#placemarks <- xml_find_all(sa_kml_data, "//kml:Placemark", ns = ns) 
+
+```
+```{r}
+sa_centroids <- sa_kml_data %>%
+  mutate(centroid = st_centroid(geometry)) %>%
+  select(Name, centroid)
 
 ```
  
 
-```{r, Create a dataframe with the placemark (study area) name and centroid Lat and Long}
+```{r, Create a dataframe with the placemark (study area) name and centroid Lat and Long, no longer needed}
 # Function to process coordinates into a matrix
 process_coordinates <- function(coordinate_string) {
     coords <- strsplit(coordinate_string, " ")[[1]]
@@ -39,7 +45,7 @@ process_coordinates <- function(coordinate_string) {
 study.area.list <- list()
 
 # Loop through each Placemark
-for (placemark in placemarks) {
+for (Names in Names) {
     # Extract the name
     name <- xml_text(xml_find_first(placemark, "kml:name", ns = ns))
     
@@ -70,42 +76,63 @@ print(Centroid_data)
 ```
 
 
-```{r, Use the centroids to make a map}
-# Convert the Centroid_data to an sf object
-centroids_sf <- st_as_sf(Centroid_data, coords = c("Centroid_Longitude", "Centroid_Latitude"), crs = 4326)
-
-# Create a simple tmap plot
-tmap_mode("view")  # Switch to interactive mode use "view", use "plot" for static mode (isn't really a map unfortunately)
-
-tm_shape(centroids_sf) +
-  tm_dots(col = "orange", size = 0.1, popup.vars = "Placemark") +
-  tm_basemap("OpenStreetMap")  # Use OpenStreetMap as the base map
-```
-
 
 ```{r, map version 2}
 # Convert the Centroid_data to an sf object
-centroids_sf <- st_as_sf(Centroid_data, coords = c("Centroid_Longitude", "Centroid_Latitude"), crs = 4326)
+sa_centroids <- st_transform(sa_centroids, 4326)
 
 # get country boundries with the rnaturalearthdata package
 world <- ne_countries(scale = "medium", returnclass = "sf")
 
 # make the basemap
-ggplot() +
+studyareamap <- ggplot() +
   geom_sf(data = world, fill = "gray95", color = "gray70") +  
-  geom_sf(data = centroids_sf, fill = "red", color = "red", size = 3, alpha = 0.8) +  # Add centroids
- coord_sf(xlim = c(-180, 180), ylim = c(-90, 90), expand = FALSE) + 
+  geom_sf(data = sa_centroids, fill = "orange", color = "orange", size = 3, alpha = 0.8) +  # Add centroids
+ coord_sf(xlim = c(-180, 180), ylim = c(-50, 90), expand = FALSE) + 
   theme_minimal() +
   labs(title = "Distribution of study areas", x = "Longitude", y = "Latitude") +
   theme(legend.position = "none")
-###would be cool to add an overlay of wolf distributions####
 
+ ggsave("~/Github/preyswitch_litrev/plots/area_studyarea_map.png", plot = studyareamap, height = 5, width = 7, dpi = 700)
+###would be cool to add an overlay of wolf distributions####
+ 
+ studyareamap
+
+ ## just centroids
+ 
+ sa_centroids <- st_transform(sa_centroids, 4326)
+centroids <- st_centroid(sa_centroids)
+
+centroidstudyareamap <- ggplot() +
+  geom_sf(data = world, fill = "gray95", color = "gray70") +
+  geom_sf(data = centroids,  fill = "orange", color = "orange", size = 2, alpha = 0.8) +
+  coord_sf(xlim = c(-180, 180), ylim = c(-50, 90), expand = FALSE) + 
+  theme_minimal() +
+  labs(title = "Distribution of study areas", x = "Longitude", y = "Latitude") +
+  theme(legend.position = "none")
+
+ggsave("~/Github/preyswitch_litrev/plots/centroid_studyarea_map.png", plot = centroidstudyareamap, height = 5, width = 7, dpi = 700)
+
+centroidstudyareamap
+```
+
+
+```{r, #ecoregion at centroid}
+studyarea_ecoregions_bycentroids <- st_join(
+  centroids,
+  ecoregions,
+  join = st_within
+) %>%
+  select(Name, ECO_ID, ECO_NAME, BIOME_NUM, BIOME_NAME, REALM, OBJECTID, centroid)
+
+write.csv(studyarea_ecoregions_bycentroids, "~/Github/preyswitch_litrev/data/StudyArea_Ecoregions_ByCentroids_Nov25.csv", row.names = FALSE)
 ```
 
 
 ```{r, ##Load the polygon data for the study areas and ecoregions}
-# Load your original polygon KML file
-study_area <- st_read("~/Github/preyswitch_litrev/data/Study_Areas_By_Code.kml") 
+# make an object that only has the new study areas, cuz this stuff takes a very long time
+study_area <- sa_kml_data %>%
+  filter(Name %in% c("ANE04ELA", "ANE04WLA", "BAA23SIE", "BAI20ADC", "BAI17ADP", "BEI24SNP", "CHM24GRP", "CHM24VOY", "NAK08BOG", "CII20ALM","DAE95GAN", "WAI07WDM", "GAE23VOY-G", "GUA04BZM", "HOS05HNP", "JEA04BHA", "JUU13SER", "KAV18ZOR", "KUK06WCA", "LAY14GLB", "LAE25SHP", "LAI12ANP", "LAR94MBS", "LAI24MAR","MAN98NAN", "MAN98HWH", "MER85QAH", "MER85QAL", "MER85LKS", "MYS19DRF", "MYS18AGF", "OLN97SCA", "ORI24GPN", "PAL22GNP", "PEE21UMP", "TOS15AMR", "TOA24ERL-L", "TOA18LGR", "TOA16LGR-A", "TRC20TMM", "VIA24KZR", "WOF19GTE"))
 
 # Load the ecoregion file
 ecoregions <- st_read("~/Github/preyswitch_litrev/data/ResolveEcoregions2017.shp")  
@@ -128,7 +155,7 @@ study_area <- st_make_valid(study_area)
 ecoregions <- st_make_valid(ecoregions)
 
 # Create an empty data frame
-study_area_ecoregions <- data.frame()
+study_area_ecoregions_new <- data.frame()
 
 # Loop through each study area polygon
 for (i in 1:nrow(study_area)) {
@@ -148,7 +175,7 @@ for (j in 1:nrow(ecoregions)) {
       percentage_overlap <- (sum(intersection_area) / sum(study_area_area)) * 100
       
 # Put it in a data frame (the 2 is the number of decimal places for the percentage)
-   study_area_ecoregions <- rbind(study_area_ecoregions, data.frame(
+   study_area_ecoregions_new <- rbind(study_area_ecoregions_new, data.frame(
         Study_Area_Name = current_study_area$Name,
         Ecoregion_ID = current_ecoregion$ECO_ID, 
         Ecoregion_Name = current_ecoregion$ECO_NAME, 
@@ -159,75 +186,14 @@ for (j in 1:nrow(ecoregions)) {
 }
 
 # Print the results
-print(study_area_ecoregions)
+print(study_area_ecoregions_new)
+
+
 
 ```
 
 ## Save it as a csv
 ```{r}
-write.csv(study_area_ecoregions, "~/Github/preyswitch_litrev/data/Study_Area_Ecoregions_Dataframe.csv", row.names = FALSE)
-```
-
-```{r}
-# Load the ecoregion KML file
-Ecoregions <- st_read("C:/Users/blott/OneDrive/Documents/Github/preyswitch_litrev/data/wwf_terr_ecos.dbf") 
-```
-
-```{r}
-# Load the ecoregion KML file
-Ecoregions1 <- st_read("C:/Users/blott/OneDrive/Documents/Github/preyswitch_litrev/data/wwf_terr_ecos.shp") 
-```
-
-
-```{r}
-# Check and set CRS if missing (4326 is for WGS 48 aka long and lat data)
-if (is.na(st_crs(study_area))) {
-  study_area <- st_set_crs(study_area, 4326) 
-}
-
-if (is.na(st_crs(Ecoregions))) {
-  Ecoregions1 <- st_set_crs(Ecoregions1, 4326) 
-}
-
-# Ensure geometries are valid
-study_area <- st_make_valid(study_area)
-Ecoregions1 <- st_make_valid(Ecoregions1)
-
-Ecoregions1 <- st_transform(Ecoregions1, st_crs(study_area))
-
-# Create an empty data frame
-study_area_Ecoregions <- data.frame()
-
-# Loop through each study area polygon
-for (i in 1:nrow(study_area)) {
-  current_study_area <- study_area[i, ]
-  
-# Loop through each ecoregion polygon
-for (j in 1:nrow(Ecoregions1)) {
-  current_Ecoregion1 <- Ecoregions1[j, ]
-    
-# Get the overlap (intersection) of a study area and a  ecoregion
-    intersection <- st_intersection(current_study_area, current_Ecoregion1)
-
-# If there is an overlap (intersection > 0), calculate the areas and percentage overlap8
-    if (nrow(intersection) > 0) {
-      study_area_area <- st_area(current_study_area) 
-      intersection_area <- st_area(intersection)
-      percentage_overlap <- (sum(intersection_area) / sum(study_area_area)) * 100
-      
-# Put it in a data frame (the 2 is the number of decimal places for the percentage)
-   study_area_Ecoregions <- rbind(study_area_Ecoregions, data.frame(
-        Study_Area_Name = current_study_area$Name,
-        Ecoregion_Name = current_Ecoregion1$eco_code, 
-        Overlap_Percentage = round(percentage_overlap, 2)  
-      ))
-    }
-  }
-}
-
-# Print the results
-print(study_area_Ecoregions)
-
-
+write.csv(study_area_ecoregions_new, "~/Github/preyswitch_litrev/data/Study_Area_Ecoregions_Dataframe_NewNov25.csv", row.names = FALSE)
 ```
 

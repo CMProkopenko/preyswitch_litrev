@@ -1,0 +1,837 @@
+---
+title: "Wolf_Pre_Analysis"
+author: "RB"
+date: "2024-11-04"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+```{r load packages, echo=FALSE}
+libs <- c('data.table', 'readr', 'dplyr', 'lubridate', 'tidyr', 'ggplot2','stringr', 'tibble', 'patchwork', 'performance','see','viridis','skimr', 'janitor','tidyverse', 'naniar', 'knitr', 'flextable', 'officer')
+lapply(libs, require, character.only = TRUE)
+```
+
+```{r}
+scatpref.unfinished <- read_csv("~/Github/preyswitch_litrev/data/Wolf.ScatPref.Jan25.csv")
+killpref.unfinished <- read_csv("~/Github/preyswitch_litrev/data/Wolf.KillPref.Jan25.csv")
+packpref.unfinished <- read_csv("~/Github/preyswitch_litrev/data/Wolf.Pack.Jan25.csv")
+preyswitching.unfinished <- read_csv("~/Github/preyswitch_litrev/data/Wolf.Switching.Jan25.csv")
+studyarea.unfinished <- read_csv("~/Github/preyswitch_litrev/data/Wolf.StudyArea.Jan25.csv")
+```
+
+
+```{r, alternative ways to measure proportion in diet for scat data}
+scatpref.alt <- scatpref.unfinished %>% 
+  # make sure everything that needs to be numeric is numeric
+   mutate(
+    Num_Ind = as.numeric(Num_Ind),
+    Area = as.numeric(Area),
+    Prop_Ind_Avail = as.numeric(Prop_Ind_Avail),
+    Ratio_Ind_Avail = as.numeric(Ratio_Ind_Avail),
+    Mean_Perc_Vol = as.numeric(Mean_Perc_Vol),
+    Rel_FO = as.numeric(Rel_FO),
+    Abs_FO = as.numeric(Abs_FO),
+    Scat_n_Tot = as.numeric(Scat_n_Tot)
+  )  %>%
+  group_by(Study_Code, Period, Prey_Taxa_Valid) %>%
+   mutate(Density = ifelse(is.na(Density), Num_Ind/Area, Density))      %>%
+    ungroup() %>%
+  group_by(Study_Code, Period) %>%
+   mutate(Abs_Density = sum(Density)) %>%
+    ungroup() %>%
+  group_by(Study_Code, Period, Prey_Taxa_Valid) %>%
+    mutate(Prop_Ind_Avail = ifelse(is.na(Prop_Ind_Avail),               Density/Abs_Density, Prop_Ind_Avail)) %>%
+    ungroup() %>%
+  group_by(Study_Code, Period, Prey_Taxa_Valid) %>%
+   mutate(Scat_n_Prey = ifelse(is.na(Scat_n_Prey),                    Scat_n_Tot*(Abs_FO/100), Scat_n_Prey)) %>%
+  mutate(Scat_Prey_Relative = Scat_n_Tot*(Rel_FO/100)) %>%
+    ungroup() %>%
+  group_by(Study_Code, Period) %>%
+   mutate(Scat_Items_Tot = sum(Scat_n_Prey)) %>%
+  mutate(Scat_Items_Relative = sum(Scat_Prey_Relative)) %>%
+  mutate(Sum_MPV = sum(Mean_Perc_Vol)) %>%
+    ungroup() %>%
+  group_by(Study_Code, Period, Prey_Taxa_Valid) %>%
+    mutate(New_Rel_FO =  ifelse(is.na(Scat_n_Prey), Scat_Prey_Relative/Scat_Items_Relative, Scat_n_Prey/Scat_Items_Tot)) %>%
+    mutate(Abs_FO = ifelse(is.na(Abs_FO), Scat_n_Prey/Scat_n_Tot, Abs_FO)) %>%
+  mutate(New_MPV = Mean_Perc_Vol/Sum_MPV) %>%
+  mutate(Orig_WSE_RelFO = Scat_n_Tot*(Rel_FO/100)) %>%
+  mutate(New_WSE_RelFO = Scat_n_Tot*New_Rel_FO) %>%
+  mutate(Orig_WSE_MPV = Scat_n_Tot*Mean_Perc_Vol) %>%
+   mutate(New_WSE_MPV = Scat_n_Tot*New_MPV) %>%
+   mutate(kg_Per_Scat = 0.439+0.008*Pantheria_kg) %>%
+   mutate(Scat_kg_Prey_AbsFO = kg_Per_Scat*Abs_FO) %>%
+  mutate(Scat_kg_Prey_AbsOcc = kg_Per_Scat*Scat_n_Prey) %>%
+  mutate(Scat_kg_Prey_OrigWSERelFO = kg_Per_Scat*Orig_WSE_RelFO) %>%
+  mutate(Scat_kg_Prey_NewWSERelFO = kg_Per_Scat*New_WSE_RelFO) %>%
+  mutate(Scat_kg_Prey_OrigWSEMPV = kg_Per_Scat*Orig_WSE_MPV) %>%
+  mutate(Scat_kg_Prey_NewWSEMPV = kg_Per_Scat*New_WSE_MPV) %>%
+    ungroup() %>%
+  group_by(Study_Code, Period) %>%
+  mutate(Scat_kg_Tot_AbsFO = sum(Scat_kg_Prey_AbsFO)) %>% 
+  mutate(Scat_kg_Tot_AbsOcc = sum(Scat_kg_Prey_AbsOcc)) %>%
+  mutate(Scat_kg_Tot_OrigWSERelFO = sum(Scat_kg_Prey_OrigWSERelFO)) %>%
+  mutate(Scat_kg_Tot_NewWSERelFO = sum(Scat_kg_Prey_NewWSERelFO)) %>%
+  mutate(Scat_kg_Tot_OrigWSEMPV = sum(Scat_kg_Prey_OrigWSEMPV)) %>%
+  mutate(Scat_kg_Tot_NewWSEMPV = sum(Scat_kg_Prey_NewWSEMPV)) %>%
+    ungroup() %>%
+  group_by(Study_Code, Period, Prey_Taxa_Valid) %>%
+   mutate(Scat_Prop_kg_Cons_AbsFO = Scat_kg_Prey_AbsFO/Scat_kg_Tot_AbsFO) %>%  
+   mutate(Scat_Prop_kg_Cons_AbsOcc = Scat_kg_Prey_AbsOcc/Scat_kg_Tot_AbsOcc) %>%
+   mutate(Scat_Prop_kg_Cons_OrigWSERelFO = Scat_kg_Prey_OrigWSERelFO/Scat_kg_Tot_OrigWSERelFO) %>%
+  mutate(Scat_Prop_kg_Cons_NewWSERelFO = Scat_kg_Prey_NewWSERelFO/Scat_kg_Tot_NewWSERelFO) %>%
+  mutate(Scat_Prop_kg_Cons_OrigWSEMPV = Scat_kg_Prey_OrigWSEMPV/Scat_kg_Tot_OrigWSEMPV) %>%
+  mutate(Scat_Prop_kg_Cons_NewWSEMPV = Scat_kg_Prey_NewWSEMPV/Scat_kg_Tot_NewWSEMPV) %>%
+    mutate(Scat_Prop_kg_Cons_NewWSE = ifelse(is.na(Scat_Prop_kg_Cons_NewWSERelFO), Scat_Prop_kg_Cons_NewWSEMPV, Scat_Prop_kg_Cons_NewWSERelFO)) %>%
+   mutate(Scat_Prop_kg_Cons_OrigWSE = ifelse(is.na(Scat_Prop_kg_Cons_OrigWSERelFO), Scat_Prop_kg_Cons_OrigWSEMPV, Scat_Prop_kg_Cons_OrigWSERelFO)) %>%
+    # mutate(Prop_kg_Cons = Scat_Prop_kg_Cons) %>% #
+    ungroup()
+scatpref.alt.1 <- scatpref.alt %>%
+  select(Study_Code, Period, Prey_Taxa_Valid, Scat_n_Tot, Scat_n_Prey, Abs_FO, Rel_FO, New_Rel_FO, Mean_Perc_Vol, New_MPV, Scat_Prop_kg_Cons_AbsFO, Scat_Prop_kg_Cons_AbsOcc, Scat_Prop_kg_Cons_OrigWSERelFO, Scat_Prop_kg_Cons_NewWSERelFO, Scat_Prop_kg_Cons_OrigWSEMPV, Scat_Prop_kg_Cons_NewWSEMPV, Scat_Prop_kg_Cons_OrigWSE, Scat_Prop_kg_Cons_NewWSE)
+scatpref.alt.1
+```
+
+```{r, summarizing scat 'proportion of diet' data available in studies}
+# Count non-missing values in each column
+scatpref_measures <- scatpref.alt.1 %>%
+  summarise(
+    Abs_FO = sum(!is.na(Abs_FO)),
+    Rel_FO = sum(!is.na(Rel_FO)),
+    New_Rel_FO = sum(!is.na(New_Rel_FO)),
+    Mean_Perc_Vol = sum(!is.na(Mean_Perc_Vol)),
+    New_MPV = sum(!is.na(New_MPV)),
+    Scat_Prop_kg_Cons_AbsFO = sum(!is.na(Scat_Prop_kg_Cons_AbsFO)),
+    Scat_Prop_kg_Cons_AbsOcc = sum(!is.na(Scat_Prop_kg_Cons_AbsOcc)),
+    Scat_Prop_kg_Cons_OrigWSERelFO = sum(!is.na(Scat_Prop_kg_Cons_OrigWSERelFO)),
+    Scat_Prop_kg_Cons_NewWSERelFO = sum(!is.na(Scat_Prop_kg_Cons_NewWSERelFO)),
+    Scat_Prop_kg_Cons_OrigWSEMPV = sum(!is.na(Scat_Prop_kg_Cons_OrigWSEMPV)),
+   Scat_Prop_kg_Cons_NewWSEMPV = sum(!is.na(Scat_Prop_kg_Cons_NewWSEMPV)),
+   Scat_Prop_kg_Cons_OrigWSE = sum(!is.na(Scat_Prop_kg_Cons_OrigWSE)),
+   Scat_Prop_kg_Cons_NewWSE = sum(!is.na(Scat_Prop_kg_Cons_NewWSE))
+  ) %>%
+  pivot_longer(cols = everything(), names_to = "Column", values_to = "Count")
+
+# Plot the counts for each column
+ggplot(scatpref_measures, aes(x = Column, y = Count, fill = Column)) +
+  geom_bar(stat = "identity", color = "black") +
+  labs(
+    x = "Scat measure",
+    y = "Count "
+  ) +
+  theme_minimal() +
+  theme(legend.position = "none", axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+
+```{r calculations, echo=FALSE}
+
+# Scat pref data 
+scatpref <- scatpref.unfinished %>% 
+  # make sure everything that needs to be numeric is numeric
+   mutate(
+    Num_Ind = as.numeric(Num_Ind),
+    Area = as.numeric(Area),
+    Prop_Ind_Avail = as.numeric(Prop_Ind_Avail),
+    Ratio_Ind_Avail = as.numeric(Ratio_Ind_Avail),
+    Mean_Perc_Vol = as.numeric(Mean_Perc_Vol),
+    Rel_FO = as.numeric(Rel_FO),
+    Abs_FO = as.numeric(Abs_FO),
+    Scat_n_Tot = as.numeric(Scat_n_Tot)
+  )  %>%
+  group_by(Study_Code, Period, Prey_Taxa_Valid) %>%
+   mutate(Density = ifelse(is.na(Density), Num_Ind/Area, Density))      %>%
+    ungroup() %>%
+  group_by(Study_Code, Period) %>%
+   mutate(Abs_Density = sum(Density)) %>%
+    ungroup() %>%
+  group_by(Study_Code, Period, Prey_Taxa_Valid) %>%
+    mutate(Prop_Ind_Avail = ifelse(is.na(Prop_Ind_Avail),               Density/Abs_Density, Prop_Ind_Avail)) %>%
+    ungroup() %>%
+  group_by(Study_Code, Period, Prey_Taxa_Valid) %>%
+   mutate(Scat_n_Prey = ifelse(is.na(Scat_n_Prey),                    Scat_n_Tot*(Abs_FO/100), Scat_n_Prey)) %>%
+  mutate(Scat_Prey_Relative = Scat_n_Tot*(Rel_FO/100)) %>%
+    ungroup() %>%
+  group_by(Study_Code, Period) %>%
+   mutate(Scat_Items_Tot = sum(Scat_n_Prey)) %>%
+  mutate(Scat_Items_Relative = sum(Scat_Prey_Relative)) %>%
+  mutate(Sum_MPV = sum(Mean_Perc_Vol)) %>%
+    ungroup() %>%
+  group_by(Study_Code, Period, Prey_Taxa_Valid) %>%
+    mutate(New_Rel_FO =  ifelse(is.na(Scat_n_Prey), Scat_Prey_Relative/Scat_Items_Relative, Scat_n_Prey/Scat_Items_Tot)) %>%
+    mutate(Abs_FO = ifelse(is.na(Abs_FO), Scat_n_Prey/Scat_n_Tot, Abs_FO)) %>%
+  mutate(New_MPV = Mean_Perc_Vol/Sum_MPV) %>%
+  mutate(New_WSE_RelFO = Scat_n_Tot*New_Rel_FO) %>%
+   mutate(New_WSE_MPV = Scat_n_Tot*New_MPV) %>%
+   mutate(kg_Per_Scat = 0.439+0.008*Pantheria_kg) %>%
+  mutate(Scat_kg_Prey_NewWSERelFO = kg_Per_Scat*New_WSE_RelFO) %>%
+  mutate(Scat_kg_Prey_NewWSEMPV = kg_Per_Scat*New_WSE_MPV) %>%
+    ungroup() %>%
+  group_by(Study_Code, Period) %>%
+  mutate(Scat_kg_Tot_NewWSERelFO = sum(Scat_kg_Prey_NewWSERelFO)) %>%
+  mutate(Scat_kg_Tot_NewWSEMPV = sum(Scat_kg_Prey_NewWSEMPV)) %>%
+    ungroup() %>%
+  group_by(Study_Code, Period, Prey_Taxa_Valid) %>%
+  mutate(Scat_Prop_kg_Cons_NewWSERelFO = Scat_kg_Prey_NewWSERelFO/Scat_kg_Tot_NewWSERelFO) %>%
+  mutate(Scat_Prop_kg_Cons_NewWSEMPV = Scat_kg_Prey_NewWSEMPV/Scat_kg_Tot_NewWSEMPV) %>%
+    mutate(Scat_Prop_kg_Cons_NewWSE = ifelse(is.na(Scat_Prop_kg_Cons_NewWSERelFO), Scat_Prop_kg_Cons_NewWSEMPV, Scat_Prop_kg_Cons_NewWSERelFO)) %>%
+  mutate(Prop_kg_Cons = Scat_Prop_kg_Cons_NewWSE) %>%
+    ungroup()
+
+# kill pref data, be sure to change the kg consumed calcs
+killpref <- killpref.unfinished %>%
+  # make sure everything that needs to be numeric is numeric
+   mutate(
+    Num_Ind = as.numeric(Num_Ind),
+    Area = as.numeric(Area),
+    Prop_Ind_Avail = as.numeric(Prop_Ind_Avail),
+    Ratio_Ind_Avail = as.numeric(Ratio_Ind_Avail)
+  )  %>%
+  group_by(Study_Code, Period, Prey_Taxa_Valid) %>%
+   mutate(Density = ifelse(is.na(Density), Num_Ind/Area, Density))      %>%
+    ungroup() %>%
+  group_by(Study_Code, Period) %>%
+   mutate(Abs_Density = sum(Density)) %>%
+    ungroup() %>%
+  group_by(Study_Code, Period, Prey_Taxa_Valid) %>%
+    mutate(Prop_Ind_Avail = ifelse(is.na(Prop_Ind_Avail),               Density/Abs_Density, Prop_Ind_Avail)) %>%
+    ungroup() %>%
+  group_by(Study_Code, Period, Prey_Taxa_Valid) %>%
+   mutate(n_Kills_Prey = ifelse(is.na(n_Kills_Prey),                    n_Kills_Tot*Prop_Kills, n_Kills_Prey)) %>%
+    ungroup() %>%
+  group_by(Study_Code, Period) %>%
+   mutate(New_n_Kills_Tot = sum(n_Kills_Prey)) %>%
+    ungroup() %>%
+  group_by(Study_Code, Period, Prey_Taxa_Valid) %>%
+    mutate(New_Prop_Kill =  n_Kills_Prey/New_n_Kills_Tot) %>%
+    mutate(Kill_kg_Prey = n_Kills_Prey*Pantheria_kg) %>%
+    ungroup() %>%
+  group_by(Study_Code, Period) %>%
+   mutate(Kill_kg_Tot = sum(Kill_kg_Prey)) %>%
+    ungroup() %>%
+   group_by(Study_Code, Period, Prey_Taxa_Valid) %>%
+    mutate(Kill_Prop_kg_Cons = Kill_kg_Prey/Kill_kg_Tot) %>%
+    mutate(Prop_kg_Cons = Kill_Prop_kg_Cons) %>%
+    ungroup()
+
+# pack pref data, make sure to sort by Pack_Name where needed, also be sure to add in a scat section if we ever get scat data that is eligible for pack pref analysis
+packpref <- packpref.unfinished %>%
+  # make sure everything that needs to be numeric is numeric
+   mutate(
+    Num_Ind = as.numeric(Num_Ind),
+    Area = as.numeric(Area),
+    Prop_Ind_Avail = as.numeric(Prop_Ind_Avail)
+  )  %>%
+  group_by(Study_Code, Period, Pack_Name, Prey_Taxa_Valid) %>%
+   mutate(Density = ifelse(is.na(Density), Num_Ind/Area, Density))      %>%
+    ungroup() %>%
+  group_by(Study_Code, Period, Pack_Name) %>%
+   mutate(Abs_Density = sum(Density)) %>%
+    ungroup() %>%
+  group_by(Study_Code, Period, Pack_Name, Prey_Taxa_Valid) %>%
+    mutate(Prop_Ind_Avail = ifelse(is.na(Prop_Ind_Avail),               Density/Abs_Density, Prop_Ind_Avail)) %>%
+    ungroup() %>%
+  group_by(Study_Code, Period, Pack_Name,  Prey_Taxa_Valid) %>%
+   mutate(n_Kills_Prey = ifelse(is.na(n_Kills_Prey),                    n_Kills_Tot*Prop_Kills, n_Kills_Prey)) %>%
+    ungroup() %>%
+  group_by(Study_Code, Period, Pack_Name) %>%
+   mutate(New_n_Kills_Tot = sum(n_Kills_Prey)) %>%
+    ungroup() %>%
+  group_by(Study_Code, Period, Pack_Name, Prey_Taxa_Valid) %>%
+    mutate(New_Prop_Kill =  n_Kills_Prey/New_n_Kills_Tot) %>%
+    mutate(Kill_kg_Prey = n_Kills_Prey*Pantheria_kg) %>%
+    ungroup() %>%
+  group_by(Study_Code, Period, Pack_Name) %>%
+   mutate(Kill_kg_Tot = sum(Kill_kg_Prey)) %>%
+    ungroup() %>%
+  group_by(Study_Code, Period, Pack_Name, Prey_Taxa_Valid) %>%
+    mutate(Kill_Prop_kg_Cons = Kill_kg_Prey/Kill_kg_Tot) %>%
+    mutate(Prop_kg_Cons = Kill_Prop_kg_Cons) %>%
+    ungroup()
+
+# prey switch data, make sure to cover both kill calcs and scat calcs
+preyswitch <- preyswitching.unfinished %>%
+  # make sure everything that needs to be numeric is numeric
+   mutate(
+    Num_Ind = as.numeric(Num_Ind),
+    Area = as.numeric(Area),
+    Prop_Ind_Avail = as.numeric(Prop_Ind_Avail),
+    Ratio_Ind_Avail = as.numeric(Ratio_Ind_Avail),
+    Mean_Perc_Vol = as.numeric(Mean_Perc_Vol),
+    Rel_FO = as.numeric(Rel_FO)
+  )  %>%
+  group_by(Study_Code, Period, Prey_Taxa_Valid) %>%
+   mutate(Density = ifelse(is.na(Density), Num_Ind/Area, Density))      %>%
+    ungroup() %>%
+  group_by(Study_Code, Period) %>%
+   mutate(Abs_Density = sum(Density)) %>%
+    ungroup() %>%
+  group_by(Study_Code, Period, Prey_Taxa_Valid) %>%
+    mutate(Prop_Ind_Avail = ifelse(is.na(Prop_Ind_Avail),               Density/Abs_Density, Prop_Ind_Avail)) %>%
+    ungroup() %>%
+  group_by(Study_Code, Period, Prey_Taxa_Valid) %>%
+  #for kill:
+   mutate(n_Kills_Prey = ifelse(is.na(n_Kills_Prey),                    n_Kills_Tot*Prop_Kills, n_Kills_Prey)) %>%
+  #for scat:
+  mutate(Scat_n_Prey = ifelse(is.na(Scat_n_Prey),                    Scat_n_Tot*(Abs_FO/100), Scat_n_Prey)) %>%
+  mutate(Scat_Prey_Relative = Scat_n_Tot*(Rel_FO/100)) %>%
+    ungroup() %>%
+  group_by(Study_Code, Period) %>%
+  #for kill:
+   mutate(New_n_Kills_Tot = sum(n_Kills_Prey)) %>%
+  #for scat:
+    mutate(Scat_Items_Tot = sum(Scat_n_Prey)) %>%
+  mutate(Scat_Items_Relative = sum(Scat_Prey_Relative)) %>%
+  mutate(Sum_MPV = sum(Mean_Perc_Vol)) %>%
+    ungroup() %>%
+  group_by(Study_Code, Period, Prey_Taxa_Valid) %>%
+  #for kill:
+    mutate(New_Prop_Kill =  n_Kills_Prey/New_n_Kills_Tot) %>%
+   mutate(Kill_kg_Prey = n_Kills_Prey*Pantheria_kg) %>%
+  #for scat:
+   mutate(New_Rel_FO =  ifelse(is.na(Scat_n_Prey), Scat_Prey_Relative/Scat_Items_Relative, Scat_n_Prey/Scat_Items_Tot)) %>%
+    mutate(Abs_FO = ifelse(is.na(Abs_FO), Scat_n_Prey/Scat_n_Tot, Abs_FO)) %>%
+  mutate(New_MPV = Mean_Perc_Vol/Sum_MPV) %>%
+  mutate(New_WSE_RelFO = Scat_n_Tot*New_Rel_FO) %>%
+   mutate(New_WSE_MPV = Scat_n_Tot*New_MPV) %>%
+   mutate(kg_Per_Scat = 0.439+0.008*Pantheria_kg) %>%
+  mutate(Scat_kg_Prey_NewWSERelFO = kg_Per_Scat*New_WSE_RelFO) %>%
+  mutate(Scat_kg_Prey_NewWSEMPV = kg_Per_Scat*New_WSE_MPV) %>%
+  ungroup() %>%
+  group_by(Study_Code, Period) %>%
+  #for kill:
+   mutate(Kill_kg_Tot = sum(Kill_kg_Prey)) %>%
+  #for scat:
+  mutate(Scat_kg_Tot_NewWSERelFO = sum(Scat_kg_Prey_NewWSERelFO)) %>%
+  mutate(Scat_kg_Tot_NewWSEMPV = sum(Scat_kg_Prey_NewWSEMPV)) %>%
+    ungroup() %>%
+  group_by(Study_Code, Period, Prey_Taxa_Valid) %>%
+  #for kill:
+   mutate(Kill_Prop_kg_Cons = Kill_kg_Prey/Kill_kg_Tot) %>%
+  #for scat:
+    mutate(Scat_Prop_kg_Cons_NewWSERelFO = Scat_kg_Prey_NewWSERelFO/Scat_kg_Tot_NewWSERelFO) %>%
+  mutate(Scat_Prop_kg_Cons_NewWSEMPV = Scat_kg_Prey_NewWSEMPV/Scat_kg_Tot_NewWSEMPV) %>%
+    mutate(Scat_Prop_kg_Cons_NewWSE = ifelse(is.na(Scat_Prop_kg_Cons_NewWSERelFO), Scat_Prop_kg_Cons_NewWSEMPV, Scat_Prop_kg_Cons_NewWSERelFO)) %>%
+  #choose kill data over scat data if both exist
+   mutate(Prop_kg_Cons = ifelse(is.na(Kill_Prop_kg_Cons), Scat_Prop_kg_Cons_NewWSE, Kill_Prop_kg_Cons)) %>%
+    ungroup()
+
+```
+
+```{r, tocombine}
+scatpref.tocombine <- scatpref %>%
+  select(Study_Code, Period, Area, Prey_Taxa_Valid, Num_Ind, Prop_Ind_Avail, Density, Abs_Density, Pantheria_kg, Abs_FO, New_Rel_FO, New_MPV, Scat_Prop_kg_Cons_NewWSE, Prop_kg_Cons, Pop_Scale, Livestock_Wild)
+killpref.tocombine <- killpref %>%
+  select(Study_Code, Period, Area, Prey_Taxa_Valid, Num_Ind, Prop_Ind_Avail, Density, Abs_Density, Pantheria_kg, n_Kills_Prey, New_Prop_Kill, Kill_Prop_kg_Cons, Prop_kg_Cons, Pop_Scale, Livestock_Wild)
+packpref.tocombine <- packpref %>%
+  select(Study_Code, Pack_Name, Period, Area, Prey_Taxa_Valid, Num_Ind, Prop_Ind_Avail, Density, Abs_Density, Pantheria_kg, n_Kills_Prey, New_Prop_Kill, Kill_Prop_kg_Cons, Prop_kg_Cons, Pop_Scale, Livestock_Wild)
+preyswitch.tocombine <- preyswitch %>%
+  select(Study_Code, Period, Area, Prey_Taxa_Valid, Num_Ind, Prop_Ind_Avail, Density, Abs_Density, Pantheria_kg, n_Kills_Prey, New_Prop_Kill, Abs_FO, New_Rel_FO, New_MPV, Scat_Prop_kg_Cons_NewWSE, Kill_Prop_kg_Cons, Prop_kg_Cons, Pop_Scale, Livestock_Wild)
+#combine everything into a single pref table, removing duplicates
+allpref <- bind_rows(scatpref.tocombine, killpref.tocombine, packpref.tocombine, preyswitch.tocombine) %>%
+  distinct(Study_Code, Period, Pack_Name, Prey_Taxa_Valid, .keep_all = TRUE)
+allpref
+```
+
+
+```{r, wildlife only}
+# Scat pref data 
+wildscatpref <- scatpref.unfinished %>% 
+  filter(Livestock_Wild == "Wild") %>% 
+  # make sure everything that needs to be numeric is numeric
+   mutate(
+    Num_Ind = as.numeric(Num_Ind),
+    Area = as.numeric(Area),
+    Prop_Ind_Avail = as.numeric(Prop_Ind_Avail),
+    Ratio_Ind_Avail = as.numeric(Ratio_Ind_Avail),
+    Mean_Perc_Vol = as.numeric(Mean_Perc_Vol),
+    Rel_FO = as.numeric(Rel_FO),
+    Abs_FO = as.numeric(Abs_FO),
+    Scat_n_Tot = as.numeric(Scat_n_Tot)
+  )  %>%
+  group_by(Study_Code, Period, Prey_Taxa_Valid) %>%
+   mutate(Density = ifelse(is.na(Density), Num_Ind/Area, Density))      %>%
+    ungroup() %>%
+  group_by(Study_Code, Period) %>%
+   mutate(Abs_Density = sum(Density)) %>%
+    ungroup() %>%
+  group_by(Study_Code, Period, Prey_Taxa_Valid) %>%
+    mutate(Prop_Ind_Avail = ifelse(is.na(Prop_Ind_Avail),               Density/Abs_Density, Prop_Ind_Avail)) %>%
+    ungroup() %>%
+  group_by(Study_Code, Period, Prey_Taxa_Valid) %>%
+   mutate(Scat_n_Prey = ifelse(is.na(Scat_n_Prey),                    Scat_n_Tot*(Abs_FO/100), Scat_n_Prey)) %>%
+  mutate(Scat_Prey_Relative = Scat_n_Tot*(Rel_FO/100)) %>%
+    ungroup() %>%
+  group_by(Study_Code, Period) %>%
+   mutate(Scat_Items_Tot = sum(Scat_n_Prey)) %>%
+  mutate(Scat_Items_Relative = sum(Scat_Prey_Relative)) %>%
+  mutate(Sum_MPV = sum(Mean_Perc_Vol)) %>%
+    ungroup() %>%
+  group_by(Study_Code, Period, Prey_Taxa_Valid) %>%
+    mutate(New_Rel_FO =  ifelse(is.na(Scat_n_Prey), Scat_Prey_Relative/Scat_Items_Relative, Scat_n_Prey/Scat_Items_Tot)) %>%
+    mutate(Abs_FO = ifelse(is.na(Abs_FO), Scat_n_Prey/Scat_n_Tot, Abs_FO)) %>%
+  mutate(New_MPV = Mean_Perc_Vol/Sum_MPV) %>%
+  mutate(New_WSE_RelFO = Scat_n_Tot*New_Rel_FO) %>%
+   mutate(New_WSE_MPV = Scat_n_Tot*New_MPV) %>%
+   mutate(kg_Per_Scat = 0.439+0.008*Pantheria_kg) %>%
+  mutate(Scat_kg_Prey_NewWSERelFO = kg_Per_Scat*New_WSE_RelFO) %>%
+  mutate(Scat_kg_Prey_NewWSEMPV = kg_Per_Scat*New_WSE_MPV) %>%
+    ungroup() %>%
+  group_by(Study_Code, Period) %>%
+  mutate(Scat_kg_Tot_NewWSERelFO = sum(Scat_kg_Prey_NewWSERelFO)) %>%
+  mutate(Scat_kg_Tot_NewWSEMPV = sum(Scat_kg_Prey_NewWSEMPV)) %>%
+    ungroup() %>%
+  group_by(Study_Code, Period, Prey_Taxa_Valid) %>%
+  mutate(Scat_Prop_kg_Cons_NewWSERelFO = Scat_kg_Prey_NewWSERelFO/Scat_kg_Tot_NewWSERelFO) %>%
+  mutate(Scat_Prop_kg_Cons_NewWSEMPV = Scat_kg_Prey_NewWSEMPV/Scat_kg_Tot_NewWSEMPV) %>%
+    mutate(Scat_Prop_kg_Cons_NewWSE = ifelse(is.na(Scat_Prop_kg_Cons_NewWSERelFO), Scat_Prop_kg_Cons_NewWSEMPV, Scat_Prop_kg_Cons_NewWSERelFO)) %>%
+  mutate(Prop_kg_Cons = Scat_Prop_kg_Cons_NewWSE) %>%
+    ungroup()
+
+# kill pref data, be sure to change the kg consumed calcs
+wildkillpref <- killpref.unfinished %>%
+   filter(Livestock_Wild == "Wild") %>% 
+  # make sure everything that needs to be numeric is numeric
+   mutate(
+    Num_Ind = as.numeric(Num_Ind),
+    Area = as.numeric(Area),
+    Prop_Ind_Avail = as.numeric(Prop_Ind_Avail),
+    Ratio_Ind_Avail = as.numeric(Ratio_Ind_Avail)
+  )  %>%
+  group_by(Study_Code, Period, Prey_Taxa_Valid) %>%
+   mutate(Density = ifelse(is.na(Density), Num_Ind/Area, Density))      %>%
+    ungroup() %>%
+  group_by(Study_Code, Period) %>%
+   mutate(Abs_Density = sum(Density)) %>%
+    ungroup() %>%
+  group_by(Study_Code, Period, Prey_Taxa_Valid) %>%
+    mutate(Prop_Ind_Avail = ifelse(is.na(Prop_Ind_Avail),               Density/Abs_Density, Prop_Ind_Avail)) %>%
+    ungroup() %>%
+  group_by(Study_Code, Period, Prey_Taxa_Valid) %>%
+   mutate(n_Kills_Prey = ifelse(is.na(n_Kills_Prey),                    n_Kills_Tot*Prop_Kills, n_Kills_Prey)) %>%
+    ungroup() %>%
+  group_by(Study_Code, Period) %>%
+   mutate(New_n_Kills_Tot = sum(n_Kills_Prey)) %>%
+    ungroup() %>%
+  group_by(Study_Code, Period, Prey_Taxa_Valid) %>%
+    mutate(New_Prop_Kill =  n_Kills_Prey/New_n_Kills_Tot) %>%
+    mutate(Kill_kg_Prey = n_Kills_Prey*Pantheria_kg) %>%
+    ungroup() %>%
+  group_by(Study_Code, Period) %>%
+   mutate(Kill_kg_Tot = sum(Kill_kg_Prey)) %>%
+    ungroup() %>%
+   group_by(Study_Code, Period, Prey_Taxa_Valid) %>%
+    mutate(Kill_Prop_kg_Cons = Kill_kg_Prey/Kill_kg_Tot) %>%
+    mutate(Prop_kg_Cons = Kill_Prop_kg_Cons) %>%
+    ungroup()
+
+# pack pref data, make sure to sort by Pack_Name where needed, also be sure to add in a scat section if we ever get scat data that is eligible for pack pref analysis
+wildpackpref <- packpref.unfinished %>%
+   filter(Livestock_Wild == "Wild") %>% 
+  # make sure everything that needs to be numeric is numeric
+   mutate(
+    Num_Ind = as.numeric(Num_Ind),
+    Area = as.numeric(Area),
+    Prop_Ind_Avail = as.numeric(Prop_Ind_Avail)
+  )  %>%
+  group_by(Study_Code, Period, Pack_Name, Prey_Taxa_Valid) %>%
+   mutate(Density = ifelse(is.na(Density), Num_Ind/Area, Density))      %>%
+    ungroup() %>%
+  group_by(Study_Code, Period, Pack_Name) %>%
+   mutate(Abs_Density = sum(Density)) %>%
+    ungroup() %>%
+  group_by(Study_Code, Period, Pack_Name, Prey_Taxa_Valid) %>%
+    mutate(Prop_Ind_Avail = ifelse(is.na(Prop_Ind_Avail),               Density/Abs_Density, Prop_Ind_Avail)) %>%
+    ungroup() %>%
+  group_by(Study_Code, Period, Pack_Name,  Prey_Taxa_Valid) %>%
+   mutate(n_Kills_Prey = ifelse(is.na(n_Kills_Prey),                    n_Kills_Tot*Prop_Kills, n_Kills_Prey)) %>%
+    ungroup() %>%
+  group_by(Study_Code, Period, Pack_Name) %>%
+   mutate(New_n_Kills_Tot = sum(n_Kills_Prey)) %>%
+    ungroup() %>%
+  group_by(Study_Code, Period, Pack_Name, Prey_Taxa_Valid) %>%
+    mutate(New_Prop_Kill =  n_Kills_Prey/New_n_Kills_Tot) %>%
+    mutate(Kill_kg_Prey = n_Kills_Prey*Pantheria_kg) %>%
+    ungroup() %>%
+  group_by(Study_Code, Period, Pack_Name) %>%
+   mutate(Kill_kg_Tot = sum(Kill_kg_Prey)) %>%
+    ungroup() %>%
+  group_by(Study_Code, Period, Pack_Name, Prey_Taxa_Valid) %>%
+    mutate(Kill_Prop_kg_Cons = Kill_kg_Prey/Kill_kg_Tot) %>%
+    mutate(Prop_kg_Cons = Kill_Prop_kg_Cons) %>%
+    ungroup()
+
+# prey switch data, make sure to cover both kill calcs and scat calcs
+wildpreyswitch <- preyswitching.unfinished %>%
+   filter(Livestock_Wild == "Wild") %>% 
+  # make sure everything that needs to be numeric is numeric
+   mutate(
+    Num_Ind = as.numeric(Num_Ind),
+    Area = as.numeric(Area),
+    Prop_Ind_Avail = as.numeric(Prop_Ind_Avail),
+    Ratio_Ind_Avail = as.numeric(Ratio_Ind_Avail),
+    Mean_Perc_Vol = as.numeric(Mean_Perc_Vol),
+    Rel_FO = as.numeric(Rel_FO)
+  )  %>%
+  group_by(Study_Code, Period, Prey_Taxa_Valid) %>%
+   mutate(Density = ifelse(is.na(Density), Num_Ind/Area, Density))      %>%
+    ungroup() %>%
+  group_by(Study_Code, Period) %>%
+   mutate(Abs_Density = sum(Density)) %>%
+    ungroup() %>%
+  group_by(Study_Code, Period, Prey_Taxa_Valid) %>%
+    mutate(Prop_Ind_Avail = ifelse(is.na(Prop_Ind_Avail),               Density/Abs_Density, Prop_Ind_Avail)) %>%
+    ungroup() %>%
+  group_by(Study_Code, Period, Prey_Taxa_Valid) %>%
+  #for kill:
+   mutate(n_Kills_Prey = ifelse(is.na(n_Kills_Prey),                    n_Kills_Tot*Prop_Kills, n_Kills_Prey)) %>%
+  #for scat:
+  mutate(Scat_n_Prey = ifelse(is.na(Scat_n_Prey),                    Scat_n_Tot*(Abs_FO/100), Scat_n_Prey)) %>%
+  mutate(Scat_Prey_Relative = Scat_n_Tot*(Rel_FO/100)) %>%
+    ungroup() %>%
+  group_by(Study_Code, Period) %>%
+  #for kill:
+   mutate(New_n_Kills_Tot = sum(n_Kills_Prey)) %>%
+  #for scat:
+    mutate(Scat_Items_Tot = sum(Scat_n_Prey)) %>%
+  mutate(Scat_Items_Relative = sum(Scat_Prey_Relative)) %>%
+  mutate(Sum_MPV = sum(Mean_Perc_Vol)) %>%
+    ungroup() %>%
+  group_by(Study_Code, Period, Prey_Taxa_Valid) %>%
+  #for kill:
+    mutate(New_Prop_Kill =  n_Kills_Prey/New_n_Kills_Tot) %>%
+   mutate(Kill_kg_Prey = n_Kills_Prey*Pantheria_kg) %>%
+  #for scat:
+   mutate(New_Rel_FO =  ifelse(is.na(Scat_n_Prey), Scat_Prey_Relative/Scat_Items_Relative, Scat_n_Prey/Scat_Items_Tot)) %>%
+    mutate(Abs_FO = ifelse(is.na(Abs_FO), Scat_n_Prey/Scat_n_Tot, Abs_FO)) %>%
+  mutate(New_MPV = Mean_Perc_Vol/Sum_MPV) %>%
+  mutate(New_WSE_RelFO = Scat_n_Tot*New_Rel_FO) %>%
+   mutate(New_WSE_MPV = Scat_n_Tot*New_MPV) %>%
+   mutate(kg_Per_Scat = 0.439+0.008*Pantheria_kg) %>%
+  mutate(Scat_kg_Prey_NewWSERelFO = kg_Per_Scat*New_WSE_RelFO) %>%
+  mutate(Scat_kg_Prey_NewWSEMPV = kg_Per_Scat*New_WSE_MPV) %>%
+  ungroup() %>%
+  group_by(Study_Code, Period) %>%
+  #for kill:
+   mutate(Kill_kg_Tot = sum(Kill_kg_Prey)) %>%
+  #for scat:
+  mutate(Scat_kg_Tot_NewWSERelFO = sum(Scat_kg_Prey_NewWSERelFO)) %>%
+  mutate(Scat_kg_Tot_NewWSEMPV = sum(Scat_kg_Prey_NewWSEMPV)) %>%
+    ungroup() %>%
+  group_by(Study_Code, Period, Prey_Taxa_Valid) %>%
+  #for kill:
+   mutate(Kill_Prop_kg_Cons = Kill_kg_Prey/Kill_kg_Tot) %>%
+  #for scat:
+    mutate(Scat_Prop_kg_Cons_NewWSERelFO = Scat_kg_Prey_NewWSERelFO/Scat_kg_Tot_NewWSERelFO) %>%
+  mutate(Scat_Prop_kg_Cons_NewWSEMPV = Scat_kg_Prey_NewWSEMPV/Scat_kg_Tot_NewWSEMPV) %>%
+    mutate(Scat_Prop_kg_Cons_NewWSE = ifelse(is.na(Scat_Prop_kg_Cons_NewWSERelFO), Scat_Prop_kg_Cons_NewWSEMPV, Scat_Prop_kg_Cons_NewWSERelFO)) %>%
+  #choose kill data over scat data if both exist
+   mutate(Prop_kg_Cons = ifelse(is.na(Kill_Prop_kg_Cons), Scat_Prop_kg_Cons_NewWSE, Kill_Prop_kg_Cons)) %>%
+    ungroup()
+```
+
+```{r, wild only}
+#simplify the dataframes so they all play nice together
+wildscatpref.tocombine <- wildscatpref %>%
+  select(Study_Code, Period, Area, Prey_Taxa_Valid, Num_Ind, Prop_Ind_Avail, Density, Abs_Density, Pantheria_kg, Abs_FO, New_Rel_FO, New_MPV, Scat_Prop_kg_Cons_NewWSE, Prop_kg_Cons, Pop_Scale)
+wildkillpref.tocombine <- wildkillpref %>%
+  select(Study_Code, Period, Area, Prey_Taxa_Valid, Num_Ind, Prop_Ind_Avail, Density, Abs_Density, Pantheria_kg, n_Kills_Prey, New_Prop_Kill, Kill_Prop_kg_Cons, Prop_kg_Cons, Pop_Scale)
+wildpackpref.tocombine <- wildpackpref %>%
+  select(Study_Code, Pack_Name, Period, Area, Prey_Taxa_Valid, Num_Ind, Prop_Ind_Avail, Density, Abs_Density, Pantheria_kg, n_Kills_Prey, New_Prop_Kill, Kill_Prop_kg_Cons, Prop_kg_Cons, Pop_Scale)
+wildpreyswitch.tocombine <- wildpreyswitch %>%
+  select(Study_Code, Period, Area, Prey_Taxa_Valid, Num_Ind, Prop_Ind_Avail, Density, Abs_Density, Pantheria_kg, n_Kills_Prey, New_Prop_Kill, Abs_FO, New_Rel_FO, New_MPV, Scat_Prop_kg_Cons_NewWSE, Kill_Prop_kg_Cons, Prop_kg_Cons, Pop_Scale)
+#combine everything into a single pref table, removing duplicates
+wildallpref <- bind_rows(wildscatpref.tocombine, wildkillpref.tocombine, wildpackpref.tocombine, wildpreyswitch.tocombine) %>%
+  distinct(Study_Code, Period, Pack_Name, Prey_Taxa_Valid, .keep_all = TRUE)
+wildallpref
+```
+
+```{r, making taxa summary}
+taxa_summary_scat <- scatpref %>%
+  group_by(Study_Code, Period) %>%
+  summarise(count_prey_taxa = n_distinct(Prey_Taxa_Valid))
+taxa_summary_kill <- killpref %>%
+  group_by(Study_Code, Period) %>%
+  summarise(count_prey_taxa = n_distinct(Prey_Taxa_Valid))
+taxa_summary_pack <- packpref %>%
+  group_by(Study_Code, Period, Pack_Name) %>%
+  summarise(count_prey_taxa = n_distinct(Prey_Taxa_Valid))
+taxa_summary_preyswitch <- preyswitch %>%
+  group_by(Study_Code, Period) %>%
+  summarise(count_prey_taxa = n_distinct(Prey_Taxa_Valid))
+
+pretaxa_summary_all <- bind_rows(taxa_summary_scat, taxa_summary_kill, taxa_summary_pack, taxa_summary_preyswitch)
+
+taxa_summary_all <- pretaxa_summary_all %>%
+  distinct(Study_Code, Period, Pack_Name, .keep_all = TRUE)
+
+# count of how many taxa available and consumed for a given study code (Paper_ID + Study area) and study period
+taxa_summary_all %>% group_by(count_prey_taxa) %>% count()
+
+```
+
+```{r}
+skim_without_charts(taxa_summary_all$count_prey_taxa)
+```
+
+```{r}
+ggplot(taxa_summary_all, aes(x = count_prey_taxa)) +
+  geom_histogram(binwidth = 1, fill = "lemonchiffon", color = "black") +
+  labs(
+    x = "Number of Prey Taxa",
+    y = "Frequency"
+  ) +
+   scale_x_continuous(breaks = c(0, 2, 4, 6, 8, 10)) +
+  theme_minimal()
+```
+
+
+```{r}
+taxa_summary_wild <- wildallpref %>%
+  group_by(Study_Code, Period, Pack_Name) %>%
+  summarise(count_prey_taxa = n_distinct(Prey_Taxa_Valid)) 
+taxa_summary_wild %>% group_by(count_prey_taxa) %>% count()
+```
+
+```{r}
+skim_without_charts(taxa_summary_wild$count_prey_taxa)
+```
+
+```{r}
+ggplot(taxa_summary_wild, aes(x = count_prey_taxa)) +
+  geom_histogram(binwidth = 1, fill = "goldenrod", color = "black") +
+  labs(
+    x = "Number of Wild Prey Taxa",
+    y = "Frequency"
+  ) +
+   scale_x_continuous(breaks = c(0, 2, 4, 6, 8, 10)) +
+  theme_minimal()
+```
+
+
+```{r}
+allpref_popscale <- allpref %>%
+  distinct(Study_Code, Period, Pack_Name, Pop_Scale) %>%  # Keep only unique combinations
+  count(Pop_Scale)
+
+ggplot(allpref_popscale, aes(x = Pop_Scale, y = n, fill = Pop_Scale)) +
+  geom_bar(stat = "identity", color = "black") +
+  labs(
+    title = "Unique Count of Pop_Scale Responses",
+    x = "Pop_Scale",
+    y = "n"
+  ) +
+  scale_fill_manual(
+    values = c("PACK" = "steelblue", "POP" = "forestgreen", "PT" = "firebrick", "NA"= "slategrey")
+  ) +  # Customize colors for each Pop_Scale level
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+```{r}
+allpref_popscale_points <- allpref %>%
+  distinct(Study_Code, Period, Pack_Name, Prey_Taxa_Valid, Pop_Scale) %>%  # Keep only unique combinations
+  count(Pop_Scale)
+
+ggplot(allpref_popscale_points, aes(x = Pop_Scale, y = n, fill = Pop_Scale)) +
+  geom_bar(stat = "identity", color = "black") +
+  labs(
+    title = "Pop_Scale Responses per Data point",
+    x = "Pop_Scale",
+    y = "n"
+  ) +
+  scale_fill_manual(
+    values = c("PACK" = "indianred", "POP" = "peachpuff", "PT" = "peru", "NA"= "gainsboro")
+  )  +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+
+```{r}
+Top2_kg_cons_x <- allpref %>%
+  filter(Prop_kg_Cons > 0) %>%
+  group_by(Study_Code, Period, Pack_Name) %>%
+  arrange(desc(Prop_kg_Cons)) %>%  # Sort by Prop_kg_Cons in descending order
+  slice_head(n = 2) %>%  # Select the top 2 values for each group
+  summarise(sum_top_two_kg_cons_x = sum(Prop_kg_Cons, na.rm = TRUE)) # Sum the top 2 values
+Top2_kg_cons_x
+```
+
+
+```{r}
+Top2_kg_cons_75 <- allpref %>%
+  filter(Prop_kg_Cons > 0) %>%
+  group_by(Study_Code, Period, Pack_Name) %>%
+  arrange(desc(Prop_kg_Cons)) %>%  # Sort by Prop_kg_Cons in descending order
+  slice_head(n = 2) %>%  # Select the top 2 values for each group
+  summarise(sum_top_two_kg_cons = sum(Prop_kg_Cons, na.rm = TRUE)) %>%  # Sum the top 2 values
+ filter(sum_top_two_kg_cons >= 0.75)   # Filter rows where cumulative sum reaches at least 0.75
+Top2_kg_cons_75
+
+```
+
+```{r}
+Top3_kg_cons_75 <- allpref %>%
+  group_by(Study_Code, Period, Pack_Name) %>%
+  arrange(desc(Prop_kg_Cons)) %>%  # Sort by Prop_kg_Cons in descending order
+  slice_head(n = 3) %>%  # Select the top 3 values for each group
+  summarise(sum_top_three_kg_cons = sum(Prop_kg_Cons, na.rm = TRUE)) %>%  # Sum the top 2 values
+ filter(sum_top_three_kg_cons >= 0.75)   # Filter rows where cumulative sum reaches at least 0.75
+Top3_kg_cons_75
+```
+
+```{r}
+Top2wild_kg_cons_x <- wildallpref %>%
+  filter(Prop_kg_Cons > 0) %>%
+  group_by(Study_Code, Period, Pack_Name) %>%
+  arrange(desc(Prop_kg_Cons)) %>%  # Sort by Prop_kg_Cons in descending order
+  slice_head(n = 2) %>%  # Select the top 2 values for each group
+  summarise(sum_top_two_kg_cons_x = sum(Prop_kg_Cons, na.rm = TRUE)) # Sum the top 2 values
+Top2wild_kg_cons_x
+```
+
+
+```{r}
+Top2wild_kg_cons_75 <- wildallpref %>%
+  filter(Prop_kg_Cons > 0) %>%
+  group_by(Study_Code, Period, Pack_Name) %>%
+  arrange(desc(Prop_kg_Cons)) %>%  # Sort by Prop_kg_Cons in descending order
+  slice_head(n = 2) %>%  # Select the top 2 values for each group
+  summarise(sum_top_two_kg_cons = sum(Prop_kg_Cons, na.rm = TRUE)) %>%  # Sum the top 2 values
+ filter(sum_top_two_kg_cons >= 0.75)   # Filter rows where cumulative sum reaches at least 0.75
+Top2wild_kg_cons_75
+```
+```{r}
+Top3wild_kg_cons_75 <- wildallpref %>%
+  filter(Prop_kg_Cons > 0) %>%
+  group_by(Study_Code, Period, Pack_Name) %>%
+  arrange(desc(Prop_kg_Cons)) %>%  # Sort by Prop_kg_Cons in descending order
+  slice_head(n = 3) %>%  # Select the top 2 values for each group
+  summarise(sum_top_three_kg_cons = sum(Prop_kg_Cons, na.rm = TRUE)) %>%  # Sum the top 2 values
+ filter(sum_top_three_kg_cons >= 0.75)   # Filter rows where cumulative sum reaches at least 0.75
+Top3wild_kg_cons_75
+```
+
+```{r}
+ggplot(allpref, aes(x = Prey_Taxa_Valid, y = Density, col = Livestock_Wild)) +
+  stat_summary(fun = mean, geom = "bar") +
+  labs(
+    x = "Prey Taxa Valid",
+    y = "Average Density",
+    color = "Livestock_Wild"
+  ) +
+    theme_classic() + 
+  theme(text = element_text(size = 5)) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+```{r}
+minmaxtable <- allpref %>%
+  summarise(
+    min_Num_Ind = min(Num_Ind, na.rm = TRUE),
+    max_Num_Ind = max(Num_Ind, na.rm = TRUE),
+    min_Density = min(Density, na.rm = TRUE),
+    max_Density = max(Density, na.rm = TRUE),
+    min_Abs_Density = min(Abs_Density, na.rm = TRUE),
+    max_Abs_Density = max(Abs_Density, na.rm = TRUE),
+    min_Area = min(Area, na.rm = TRUE),
+    max_Area = max(Area, na.rm = TRUE)
+  )
+minmaxtable
+
+```
+
+```{r}
+ggplot(allpref, aes(x = Density)) +
+  geom_density(fill = "skyblue", alpha = 0.5) +
+  labs(
+    x = "Density",
+    y = "geom density"
+  ) +
+  theme_minimal()
+```
+
+```{r}
+ggplot(wildallpref, aes(x = Density)) +
+  geom_density(fill = "skyblue", alpha = 0.5) +
+  labs(
+    x = "Wild Prey Density",
+    y = "geom density"
+  ) +
+  theme_minimal()
+```
+
+
+```{r}
+ggplot(allpref, aes(x = Abs_Density)) +
+  geom_density(fill = "dodgerblue", alpha = 0.5) +
+  labs(
+    x = "Absolute Density",
+    y = "geom density"
+  ) +
+  theme_minimal()
+```
+
+```{r}
+ggplot(wildallpref, aes(x = Abs_Density)) +
+  geom_density(fill = "dodgerblue", alpha = 0.5) +
+  labs(
+    x = "Wild Prey Absolute Density",
+    y = "geom density"
+  ) +
+  theme_minimal()
+```
+
+```{r}
+studyarea.covariates <- skim_without_charts(studyarea.unfinished) 
+
+studyarea.flextable <- flextable(studyarea.covariates)
+
+# Save as Word document
+doc <- read_docx() %>%
+  body_add_flextable(studyarea.flextable)
+
+print(doc, target = "studyarea.flextable.Jan25.docx")
+studyarea.covariates
+```
+
+```{r}
+skimmed.allpref.Jan25 <- skim_without_charts(allpref)
+allpref.flextable.Jan25 <- flextable(skimmed.allpref)
+
+# Save as Word document
+doc <- read_docx() %>%
+  body_add_flextable(allpref.flextable.Jan25)
+
+print(doc, target = "allpref.flextable.Jan25.docx")
+allpref.flextable.Jan25
+```
+
+```{r}
+studyarea.unfinished %>%
+  group_by(Ecoregion_OneEarth) %>%
+  tally()
+```
+```{r}
+ecoregion_counts <- studyarea.unfinished %>%
+  count(Ecoregion_OneEarth)  # Counts each unique Ecoregion_OneEarth value
+
+# Visualize the counts with a bar plot
+ggplot(ecoregion_counts, aes(x = Ecoregion_OneEarth, y = n)) +
+  geom_bar(stat = "identity", fill = "skyblue", color = "black") +
+  labs(
+    x = "Ecoregion OneEarth",
+    y = "Count"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+

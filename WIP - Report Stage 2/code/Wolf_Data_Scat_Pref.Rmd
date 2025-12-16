@@ -31,10 +31,6 @@ scatpref <- scatpref.messy %>%
 ```{r}
 sort(unique(scatpref$Prey_Taxa_Valid))
 ```
-```{r}
-
-```
-
 
 ```{r}
 # Make sure the data is numeric

@@ -64,3 +64,8 @@ Full.2.sample.10 <- sample(c(1:17), size=10, replace=F)
 sort(Full.2.sample.10, decreasing = F)
 ```
 
+```{r}
+April2025.Subsample.100 <- sample(c(1:27641), size=100, replace=F)
+sort(April2025.Subsample.100, decreasing = F)
+```
+

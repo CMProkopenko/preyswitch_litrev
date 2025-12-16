@@ -18,7 +18,8 @@ lapply(libs, require, character.only = TRUE)
 
 ```{r, load data}
 halfofpapers <- read_csv("~/Github/preyswitch_litrev/data/Wolf_PreyPref_Half_Papers.csv")
-halfofpapers.wild <- read_csv("~/Github/preyswitch_litrev/data/Wolf_PreyPref_Half_Papers_Wildonly.csv")
+halfofpapers.wild <- halfofpapers %>%
+  filter(Livestock_Wild == "Wild")
 ```
 
 ```{r}
@@ -221,19 +222,16 @@ pan.prop.bm.plot.6
 ```
 
 ```{r}
-
-halfofpapers.panprop.3$Pan_Prop_BM_Avail <- as.numeric(halfofpapers.panprop.3$Pan_Prop_BM_Avail)
-halfofpapers.panprop.3$Pan_Prop_BM_Cons <- as.numeric(halfofpapers.panprop.3$Pan_Prop_BM_Cons)
-
-# Ensure Study_Code is a factor
-halfofpapers.panprop.3$Study_Code <- as.factor(halfofpapers.panprop.3$Study_Code)
-
 halfofpapers.panprop.3 <- halfofpapers.panprop %>%
   filter(!is.na(Pan_Prop_BM_Avail) & !is.na(Pan_Prop_BM_Cons)) %>%
   group_by(Study_Code) %>%
   filter(n() >= 3) %>%
   ungroup()
+halfofpapers.panprop.3$Pan_Prop_BM_Avail <- as.numeric(halfofpapers.panprop.3$Pan_Prop_BM_Avail)
+halfofpapers.panprop.3$Pan_Prop_BM_Cons <- as.numeric(halfofpapers.panprop.3$Pan_Prop_BM_Cons)
 
+# Ensure Study_Code is a factor
+halfofpapers.panprop.3$Study_Code <- as.factor(halfofpapers.panprop.3$Study_Code)
 
 # Plot with smoothing lines for each Study_Code
 pan.prop.bm.plot.7 <- ggplot(halfofpapers.panprop.3) +

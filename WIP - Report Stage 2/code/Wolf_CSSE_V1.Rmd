@@ -20,6 +20,10 @@ lapply(libs, require, character.only = TRUE)
 ###Load data
 ```{r}
 dat <- read_csv("~/Github/preyswitch_litrev/data/WolfDataExtraction_PreyPref.csv")
+scatpreffull <- read_csv("~/Github/preyswitch_litrev/data/WolfDataExtraction_PreyPref.csv") 
+#scatpref <- scatpreffull %>%
+ # select(Paper_ID, Study_Area, Area, Prey_Item, Prey_Taxa, Period, Num_Ind) %>%
+  #filter(!Livestock_wild %in%c("feral", "Livestock"))
 ```
 
 #dat <- read_csv('data/WolfDataExtraction_PreyPref.csv') ###tibble version
@@ -31,9 +35,9 @@ dat <- read_csv("~/Github/preyswitch_litrev/data/WolfDataExtraction_PreyPref.csv
 #####Plots
 
 
-```{r}
+```{r, #BM Cons vs Available ~ livestock vs wild}
 pref.plot1 <- ggplot(dat) +
-  geom_point(aes(x = Prop_BM_Avail, y = Prop_BM_Consumed, col = Livestock_Wild)) + ##or col = Paper_ID
+  geom_point(size = 3, aes(x = Prop_BM_Avail, y = Prop_BM_Consumed, col = Livestock_Wild)) + ##or col = Paper_ID
  # geom_smooth(aes(x = Prop_BM_Avail, y = Prop_BM_Consumed, col = Livestock_Wild, se = FALSE, inherit.aes=TRUE))+ #if we wanna fit a curve to it 
   geom_abline(intercept = 0, slope = 1, linetype="dashed") + ###constant 1:1 line
   theme_classic() + theme(text = element_text(size = 18)) +
@@ -45,9 +49,9 @@ pref.plot1
        height = 5, width = 7, dpi = 700)
 ```
 
-```{r}
+```{r, #BM consumed vs avail ~ mass cat}
 pref.plot4 <- ggplot(dat) +
-  geom_point(aes(x = Prop_BM_Avail, y = Prop_BM_Consumed,col= Mass_Cat_A))+   ##or col = Paper_ID 
+  geom_point(size = 3, aes(x = Prop_BM_Avail, y = Prop_BM_Consumed,col= Mass_Cat_A))+   ##or col = Paper_ID 
   #geom_line(aes(x = Prop_BM_Avail, y = Prop_BM_Consumed, group=Paper_ID))+#if we wanna check by Paper_ID
  #geom_smooth(aes(x = Prop_BM_Avail, y = Prop_BM_Consumed, col = Mass_Cat_A, se = FALSE, inherit.aes=TRUE))+ #if you want to fit a curve
   geom_abline(intercept = 0, slope = 1, linetype="dashed") + ###constant 1:1 line
@@ -60,8 +64,7 @@ ggsave("plots/wolf-preference-MassCategories_inferno.png",
        height = 5, width = 7, dpi=700)
 ```
 
-
-```{r}
+```{r, #BM consumed vs avail ~ mass range}
 pref.plot2 <- ggplot(dat) +
   geom_point(aes(x = Prop_BM_Avail, y = Prop_BM_Consumed, col=cut(Avg_Mass_kg,quantile(Avg_Mass_kg, na.rm = TRUE)))) + ##or col = Paper_ID 
   #geom_line(aes(x = Prop_BM_Avail, y = Prop_BM_Consumed, group=Paper_ID))+#if we wanna check by Paper_ID
@@ -75,8 +78,7 @@ ggsave("plots/wolf-preference-mass.png",
        height = 5, width = 7)
 ```
 
-
-```{r}
+```{r, #BM consumed vs avail by paper ID}
 pref.plot3 <- ggplot(dat) +
   geom_point(aes(x = Prop_BM_Avail, y = Prop_BM_Consumed, col=Paper_ID)) + ##or col = Paper_ID 
   #geom_line(aes(x = Prop_BM_Avail, y = Prop_BM_Consumed, group=Paper_ID))+#if we wanna check by Paper_ID
@@ -94,6 +96,7 @@ ggsave("plots/wolf-preference-Paper_ID.png",
 dat %>%
   skim_without_charts() ### add one cuz one horse is domestic one is feral/wild
 ```
+
 ```{r}
 pref <- dat %>%
   group_by(Livestock_Wild) %>%
@@ -102,6 +105,7 @@ pref <- dat %>%
 pref
 
 ```
+
 ```{r}
 help <- dat %>%
   group_by(Livestock_Wild)%>%

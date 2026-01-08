@@ -400,6 +400,29 @@ scattop2_cons_avail_plot
 ```
 
 
+```{r}
+scattop2.ratios <- scattop2 %>%
+  filter(Ratio_kg_Avail < 20)
+
+scattop2_ratio_cons_avail_plot <- ggplot(scattop2.ratios) +
+  geom_point(aes(x = Ratio_kg_Avail, y = Ratio_kg_Cons)) + 
+  geom_abline(intercept = 0, slope = 1, linetype = "dashed") + 
+  theme_classic() + 
+  theme(text = element_text(size = 10)) +
+  
+  # Reduce the number of ticks on the axes
+ # scale_x_continuous(breaks = c(0, 0.5, 1)) +  
+ # scale_y_continuous(breaks = c(0, 0.5, 1)) +  
+  
+  xlab("Ratio of Biomass Available") + 
+  ylab("Ratio of Biomass Consumed")
+
+ggsave("~/Github/preyswitch_litrev/WIP - Report Stage 2/plots/scattop2_ratio_cons_avail_plot.png", plot = scattop2_ratio_cons_avail_plot, height = 5, width = 7, dpi = 700)
+
+scattop2_ratio_cons_avail_plot
+```
+
+
 #################################################################
 
 ```{r}

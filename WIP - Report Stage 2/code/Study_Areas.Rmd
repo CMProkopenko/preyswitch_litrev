@@ -16,6 +16,7 @@ sa_kml_data <- sa_kml_file %>%
 #placemarks <- xml_find_all(sa_kml_data, "//kml:Placemark", ns = ns) 
 
 ```
+
 ```{r}
 sa_centroids <- sa_kml_data %>%
   mutate(centroid = st_centroid(geometry)) %>%
@@ -195,5 +196,61 @@ print(study_area_ecoregions_new)
 ## Save it as a csv
 ```{r}
 write.csv(study_area_ecoregions_new, "~/Github/preyswitch_litrev/data/Study_Area_Ecoregions_Dataframe_NewNov25.csv", row.names = FALSE)
+```
+
+```{r}
+# Load the ecoregion KML file
+Ecoregions <- st_read("C:/Users/blott/OneDrive/Documents/Github/preyswitch_litrev/data/wwf_terr_ecos.dbf")
+Ecoregions1 <- st_read("C:/Users/blott/OneDrive/Documents/Github/preyswitch_litrev/data/wwf_terr_ecos.shp")
+```
+
+```{r}
+# Check and set CRS if missing (4326 is for WGS 48 aka long and lat data)
+if (is.na(st_crs(study_area))) {
+  study_area <- st_set_crs(study_area, 4326) 
+}
+
+if (is.na(st_crs(Ecoregions))) {
+  Ecoregions1 <- st_set_crs(Ecoregions1, 4326) 
+}
+
+# Ensure geometries are valid
+study_area <- st_make_valid(study_area)
+Ecoregions1 <- st_make_valid(Ecoregions1)
+
+Ecoregions1 <- st_transform(Ecoregions1, st_crs(study_area))
+
+# Create an empty data frame
+study_area_Ecoregions <- data.frame()
+
+# Loop through each study area polygon
+for (i in 1:nrow(study_area)) {
+  current_study_area <- study_area[i, ]
+  
+# Loop through each ecoregion polygon
+for (j in 1:nrow(Ecoregions1)) {
+  current_Ecoregion1 <- Ecoregions1[j, ]
+    
+# Get the overlap (intersection) of a study area and a  ecoregion
+    intersection <- st_intersection(current_study_area, current_Ecoregion1)
+
+# If there is an overlap (intersection > 0), calculate the areas and percentage overlap8
+    if (nrow(intersection) > 0) {
+      study_area_area <- st_area(current_study_area) 
+      intersection_area <- st_area(intersection)
+      percentage_overlap <- (sum(intersection_area) / sum(study_area_area)) * 100
+      
+# Put it in a data frame (the 2 is the number of decimal places for the percentage)
+   study_area_Ecoregions <- rbind(study_area_Ecoregions, data.frame(
+        Study_Area_Name = current_study_area$Name,
+        Ecoregion_Name = current_Ecoregion1$eco_code, 
+        Overlap_Percentage = round(percentage_overlap, 2)  
+      ))
+    }
+  }
+}
+
+# Print the results
+print(study_area_Ecoregions)
 ```
 

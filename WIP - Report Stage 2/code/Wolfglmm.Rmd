@@ -12,8 +12,8 @@ lapply(libs, require, character.only = TRUE)
 ```
 
 ```{r}
-ScatPref_Nov2025 <- read_csv("C:/Users/blott/OneDrive/Documents/Github/preyswitch_litrev/data/ScatPref_Nov2025.csv")
-StudyArea_Nov2025 <- read_csv("C:/Users/blott/OneDrive/Documents/Github/preyswitch_litrev/data/StudyArea_Nov2025.csv")
+ScatPref_Nov2025 <- read_csv("WIP - Report Stage 2/data/ScatPref_Nov2025.csv")
+StudyArea_Nov2025 <- read_csv("WIP - Report Stage 2/data/StudyArea_Nov2025.csv")
 ```
 
 
@@ -31,23 +31,30 @@ scatpref.unfinished <- ScatPref_Nov2025 %>%
 
 studyarea <- StudyArea_Nov2025 %>%
   mutate(Realm_Olson = ifelse(is.na(Realm_Olson), "NA", Realm_Olson),
- Realm_OneEarth = ifelse(is.na(Realm_OneEarth), "NA", Realm_OneEarth)) %>%
-  select(Study_Code, Study_Country, Realm_Olson, Realm_OneEarth, Biome_Olson, Bioregion_Olson, Bioregion_OneEarth, Eco_Code_Olson, Eco_Num_Olson, Ecoregion_Olson, Suprarealm_OneEarth, Subrealm_OneEarth, Ecoregion_OneEarth2)
+ Suprarealm_OneEarth = ifelse(is.na(Suprarealm_OneEarth), "NA", Suprarealm_OneEarth),
+ Biome_Dinerstein_Name = case_when(
+    Biome_Dinerstein_Name == "Temperate Broadleaf & Mixed Forests" ~ "TempBroadMixFor",
+    Biome_Dinerstein_Name == "Temperate Grasslands, Savannas & Shrublands" ~ "TempGrassSavShrub",
+    Biome_Dinerstein_Name == "Boreal Forests/Taiga" ~ "BorealForestTaiga",
+    Biome_Dinerstein_Name == "Mediterranean Forests, Woodlands & Scrub" ~ "MediForScrub",
+    Biome_Dinerstein_Name == "Temperate Conifer Forests" ~ "TempConiferFor",
+    Biome_Dinerstein_Name == "Montane Grasslands & Shrublands" ~ "MontGrassShrub",
+    Biome_Dinerstein_Name == "Tundra" ~ "Tundra",
+    Biome_Dinerstein_Name == "Deserts & Xeric Shrublands" ~ "DesertXericShrub",
+    TRUE ~ Biome_Dinerstein_Name
+  )) %>%
+  select(Study_Code, Study_Country, Realm_Olson, Realm_OneEarth, Biome_Olson, Biome_Dinerstein, Biome_Dinerstein_Name, Bioregion_Olson, Bioregion_OneEarth, Eco_Code_Olson, Eco_Num_Olson, Ecoregion_Olson, Suprarealm_OneEarth, Subrealm_OneEarth, Ecoregion_OneEarth, Ecoregion_OneEarth2)
 
-
-scatpref <- scatpref.unfinished %>%
+scatstudy.unfinished <- scatpref.unfinished %>%
   left_join(studyarea, by = "Study_Code")
 
-```
-
-```{r}
-scatpref$Mass_Cat <- cut(scatpref$Pantheria_kg,
+scatstudy.unfinished$Mass_Cat <- cut(scatstudy.unfinished$Pantheria_kg,
                                      breaks = c(0, 20.5, 80.5, 150.5, 300.5, 500.5, Inf),  
                                      labels = c("≤ 20 kg", "20-80 kg", "80-150 kg", "150-300 kg", "300-500 kg", "≥ 500 kg"), 
                                      right = FALSE) # Use right=FALSE for inclusive lower bounds
 
 
-scatpref <- scatpref %>%
+scatstudy.unfinished <- scatstudy.unfinished %>%
    mutate(
    Area = as.numeric(Area),
    Prop_Ind_Avail = as.numeric(Prop_Ind_Avail),
@@ -57,30 +64,38 @@ scatpref <- scatpref %>%
     Mass_Cat = as.factor(Mass_Cat),
     Study_Code = as.factor(Study_Code),
     Prey_Taxa_Valid = as.factor(Prey_Taxa_Valid),
-    Scat_n_Prey = as.numeric(scatpref$Scat_n_Prey),
-    Scat_n_Tot = as.numeric(scatpref$Scat_n_Tot),
-    Abs_FO = as.numeric(scatpref$Abs_FO),
-    Rel_FO = as.numeric(scatpref$Rel_FO),
+    Scat_n_Prey = as.numeric(Scat_n_Prey),
+    Scat_n_Tot = as.numeric(Scat_n_Tot),
+    Abs_FO = as.numeric(Abs_FO),
+    Rel_FO = as.numeric(Rel_FO),
    Defense = as.factor(Defense),
-   n_Prey_Species = as.factor(n_Prey_Species),
-   Wild_Ung_Avail_n = as.factor(Wild_Ung_Avail_n),
+   n_Prey_Species = as.numeric(n_Prey_Species),
+   Wild_Ung_Avail_n = as.numeric(Wild_Ung_Avail_n),
    Study_Code = as.factor(Study_Code),
    Study_Country = as.factor(Study_Country),
   Realm_Olson = as.factor(Realm_Olson),
   Realm_OneEarth = as.factor(Realm_OneEarth),
   Biome_Olson = as.factor(Biome_Olson),
+  Biome_Dinerstein = as.factor(Biome_Dinerstein),
+  Biome_Dinerstein_Name = as.factor(Biome_Dinerstein_Name),
   Bioregion_Olson = as.factor(Bioregion_Olson),
   Bioregion_OneEarth = as.factor(Bioregion_OneEarth),
   Eco_Code_Olson = as.factor(Eco_Code_Olson),
   Eco_Num_Olson = as.factor(Eco_Num_Olson),
   Ecoregion_Olson = as.factor(Ecoregion_Olson),
+  Ecoregion_OneEarth = as.factor(Ecoregion_OneEarth),
   Ecoregion_OneEarth2 = as.factor(Ecoregion_OneEarth2),
   Suprarealm_OneEarth = as.factor(Suprarealm_OneEarth),
   Subrealm_OneEarth = as.factor(Subrealm_OneEarth)
    )
 
+skim_without_charts(scatstudy.unfinished)
+```
 
-scatpref2 <- scatpref %>%
+
+
+```{r}
+scatstudy <- scatstudy.unfinished %>%
   mutate(Num_Ind = if_else(is.na(Num_Ind) & !is.na(Density) & !is.na(Area),
                             Density * Area, Num_Ind)) %>% 
   mutate(Density = if_else(is.na(Density) & !is.na(Num_Ind) & !is.na(Area),
@@ -107,7 +122,7 @@ group_by(Study_Code, Period) %>%
  # Ratio of Pantheria kg available
   mutate(Pre_Ratio_kg_Avail = Sum_PropInd_x_Pan - PropInd_x_Pan) %>%
   mutate(Ratio_kg_Avail = PropInd_x_Pan / Pre_Ratio_kg_Avail) %>%
-#Step 2: Calculate the Scat_n_Prey, new relative FO, BM consumed, and ratio and prop of BM consumed
+  #Step 2: Calculate the Scat_n_Prey, new relative FO, BM consumed, and ratio and prop of BM consumed
   #Make sure everything has a Scat_n_Prey if possible
   group_by(Study_Code, Period, Prey_Taxa_Valid) %>%
    mutate(Scat_n_Prey = ifelse(is.na(Scat_n_Prey), Scat_n_Tot*Abs_FO/100, Scat_n_Prey)) %>%
@@ -133,7 +148,7 @@ group_by(Study_Code, Period) %>%
 
 ```{r}
 #prep df for all wildlife model 
-scatpref.4den <- scatpref2 %>%
+scatpref.4den <- scatstudy %>%
   filter(!is.na(Prop_kg_Cons), !is.na(Prop_kg_Avail)) %>%
   filter(Prop_kg_Avail >= 0.01) %>%
     filter(Prop_kg_Cons >= 0.01) %>%
@@ -175,23 +190,75 @@ scatpref.4mw <- scatpref.4den  %>%
 modelw.kga.pankg <- glm(Prop_kg_Cons ~ Prop_kg_Avail*Pantheria_kg, data= scatpref.4mw)
 summary(modelw.kga.pankg)
 
-plot(modelw.kga.pankg, which = 1)
-plot(modelw.kga.pankg, which = 2)
+plot(modelw.kga.pankg)
 
 confint(modelw.kga.pankg)
 ```
 
 ```{r}
-modelw.kga.mc.wun.def.ecooe <- glm(Prop_kg_Cons ~ Prop_kg_Avail + Mass_Cat + Wild_Ung_Avail_n + Defense + Ecoregion_OneEarth2, data= scatpref.4mw) #Proportion biomass consumed ~ Proportion biomass available + body size category + number of wild ungulate prey species + antipredator + ecoregion
+modelw.kga.mc.wun.def.ecooe <- glm(Prop_kg_Cons ~ 0 + Prop_kg_Avail + Mass_Cat + Wild_Ung_Avail_n + Defense + Biome_Dinerstein_Name, data= scatstudy.4mw) #Proportion biomass consumed ~ 0 + Proportion biomass available + body size category + number of wild ungulate prey species + antipredator + biome
 summary(modelw.kga.mc.wun.def.ecooe)
 
-plot(modelw.kga.mc.wun.def.ecooe, which = 1)
-plot(modelw.kga.mc.wun.def.ecooe, which = 2)
+#plot(modelw.kga.mc.wun.def.ecooe)
 
-confint(modelw.kga.mc.wun.def.ecooe)
+#confint(modelw.kga.mc.wun.def.ecooe)
+```
+
+```{r, #visualizing numeric predictors}
+
+##Proportion biomass available##
+eff.avail <- ggpredict(
+  modelw.kga.mc.wun.def.ecooe,
+  terms = "Prop_kg_Avail"
+)
+plot(eff.avail)
+
+##Species of wild ungulate available##
+eff.ungavailn <- ggpredict(
+  modelw.kga.mc.wun.def.ecooe,
+  terms = "Wild_Ung_Avail_n"
+)
+plot(eff.ungavailn)
+
+##body mass category##
+eff.kg <- ggpredict(
+  modelw.kga.mc.wun.def.ecooe,
+  terms = "Mass_Cat"
+)
+plot(eff.kg)
+
+
+##Antipredator defense##
+eff.defense <- ggpredict(
+  modelw.kga.mc.wun.def.ecooe,
+  terms = "Defense"
+)
+plot(eff.defense)
+
+##OneEarth Ecoregion##
+eff.biome <- ggpredict(
+  modelw.kga.mc.wun.def.ecooe,
+  terms = "Biome_Dinerstein_Name"
+)
+plot(eff.biome)
 ```
 
 ```{r}
+eff_interact <- ggpredict(
+  modelw.kga.mc.wun.def.ecooe,
+  terms = c("Prop_kg_Avail", "Mass_Cat"))
 
+
+ggplot(eff_interact, aes(x = x, y = predicted, color = group)) +
+  geom_line(size = 1) +
+  geom_ribbon(aes(ymin = conf.low, ymax = conf.high, fill = group),
+              alpha = 0.2, color = NA) +
+  labs(
+    x = "Proportion of Biomass Available",
+    y = "Predicted Proportion Biomass Consumed",
+    color = "Mass Category",
+    fill = "Mass Category"
+  ) +
+  theme_bw()
 ```
 

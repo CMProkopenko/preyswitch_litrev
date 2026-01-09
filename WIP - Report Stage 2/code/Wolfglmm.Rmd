@@ -7,13 +7,13 @@ output: html_document
 
 
 ```{r}
-libs <- c('Matrix','lme4','glmmTMB', 'ggeffects','data.table', 'readr', 'dplyr', 'lubridate', 'tidyr', 'ggplot2','stringr', 'tibble', 'patchwork', 'performance','see','viridis','skimr', 'janitor','tidyverse', 'naniar', 'knitr')
+libs <- c('Matrix','lme4','glmmTMB', 'ggeffects','data.table', 'readr', 'dplyr', 'lubridate', 'tidyr', 'ggplot2','stringr', 'tibble', 'patchwork', 'performance','see','viridis','skimr', 'janitor','tidyverse', 'naniar', 'knitr', 'broom')
 lapply(libs, require, character.only = TRUE)
 ```
 
 ```{r}
-ScatPref_Nov2025 <- read_csv("WIP - Report Stage 2/data/ScatPref_Nov2025.csv")
-StudyArea_Nov2025 <- read_csv("WIP - Report Stage 2/data/StudyArea_Nov2025.csv")
+ScatPref_Nov2025 <- read_csv("~/WIP - Report Stage 2/data/ScatPref_Nov2025.csv")
+StudyArea_Nov2025 <- read_csv("~/WIP - Report Stage 2/data/StudyArea_Nov2025.csv")
 ```
 
 
@@ -304,10 +304,14 @@ scatstudy_cons_avail_plot
 ######################### TOP 2 WILD ONLY ####################
 ```{r}
 scattop2.norecalc <- scatstudy %>%
-  filter(Prop_kg_Cons > 0) %>%
+filter(Prop_kg_Cons > 0) %>%
   group_by(Study_Code, Period) %>%
   arrange(desc(Prop_kg_Cons)) %>%  # Sort by Prop_kg_Cons in descending order
-  slice_head(n = 2)  # Select the top 2 values for each group
+  slice_head(n = 2) %>%  # Select the top 2 values for each group
+  group_by(Study_Code, Period) %>%
+  mutate(sum_top_two_kg_cons = sum(Prop_kg_Cons, na.rm = TRUE)) %>%  # Sum the top 2 values
+  ungroup() %>%
+ filter(sum_top_two_kg_cons >= 0.70)   # Filter rows where cumulative sum reaches at least 0.70
  
 
 scattop2 <- scattop2.norecalc %>%
@@ -357,8 +361,9 @@ group_by(Study_Code, Period) %>%
   mutate(Prop_kg_Cons = Prey_Tot_kg_Cons/Tot_kg_Cons) %>%
   mutate(Pre_Ratio_kg_Cons = Tot_kg_Cons - Prey_Tot_kg_Cons) %>%
   mutate(Ratio_kg_Cons = Prey_Tot_kg_Cons/Pre_Ratio_kg_Cons) %>%
-  relocate(Mass_Cat, Ind_Tot, Density_Tot, Prop_Ind, Prop_kg_Avail, Ratio_kg_Avail, .before = Orig_BM_Avail) %>%
-  relocate(Prey_Tot_kg_Cons, Tot_kg_Cons, Prop_kg_Cons, Ratio_kg_Cons, .before = Mean_Perc_Vol)
+  relocate(Mass_Cat, Ind_Tot, Density_Tot, Prop_Ind, Ratio_Ind, Prop_kg_Avail, Ratio_kg_Avail, .before = Orig_BM_Avail) %>%
+  relocate(Prey_Tot_kg_Cons, Tot_kg_Cons, Prop_kg_Cons, Ratio_Occs, Ratio_kg_Cons, .before = Mean_Perc_Vol) %>%
+  filter()
 
 ```
 
@@ -397,6 +402,11 @@ scattop2_cons_avail_plot <- ggplot(scattop2) +
 ggsave("~/Github/preyswitch_litrev/WIP - Report Stage 2/plots/scattop2_cons_avail_plot.png", plot = scattop2_cons_avail_plot, height = 5, width = 7, dpi = 700)
 
 scattop2_cons_avail_plot
+```
+
+```{r}
+modelw.ratio.ind.occ.scattop2 <- glm(Ratio_Occs ~ 0 + Ratio_Ind + Mass_Cat +  Defense + Biome_Detal_Name, data= scattop2) #Proportion biomass consumed ~ 0 + Proportion biomass available + body size category +  antipredator + biome
+summary(modelw.ratio.ind.occ.scattop2)
 ```
 
 

@@ -300,6 +300,33 @@ ggsave("~/Github/preyswitch_litrev/WIP - Report Stage 2/plots/scatstudy_cons_ava
 scatstudy_cons_avail_plot
 ```
 
+```{r}
+scat.nomixedgroup <- scatstudy %>%
+  filter(!Prey_Item %in% ("Cervids"))
+
+scat.sus.1 <- scatstudy %>%
+  group_by(Study_Code, Period) %>%
+  filter(any(Prey_Taxa_Valid == "Sus scrofa")) %>%
+  ungroup()
+ # count(Prey_Taxa_Valid, sort = TRUE)
+  
+scat.sus <- scat.sus.1 %>%
+  filter(Prey_Taxa_Valid %in% c("Sus scrofa", "Dama dama", "Alces alces", "Capreolus caprolus", "Cervus elaphus")) %>%
+  group_by(Study_Code, Period) %>%
+  filter(n() >= 2) %>%
+  ungroup()
+ # count(Prey_Taxa_Valid, sort = TRUE)
+
+#prey2.combinations <- scattop2.nomixedgroup %>%
+ # group_by(Study_Code, Period) %>%
+ # summarise(
+ #   Prey_Pair = paste(sort(Prey_Taxa_Valid), collapse = " + "),
+  #  .groups = "drop"
+ # ) %>%
+ # count(Prey_Pair, sort = TRUE)
+
+```
+
 
 ######################### TOP 2 WILD ONLY ####################
 ```{r}
@@ -327,9 +354,13 @@ group_by(Study_Code, Period) %>%
          # Proportion of individuals available
          mutate(Prop_Ind = ifelse(is.na(Num_Ind), Prop_Ind_Avail/Prop_Ind_Avail_Sum, ifelse(!is.na(Num_Ind) & Ind_Tot>0, Num_Ind / Ind_Tot, NA_real_)),
          # Ratio of individuals available
-         Pre_Ratio_Ind = ifelse(is.na(Num_Ind), 1 - Prop_Ind, ifelse(!is.na(Num_Ind) & !is.na(Ind_Tot), Ind_Tot - Num_Ind, NA_real_)),
-         Ratio_Ind = ifelse(is.na(Num_Ind), ifelse(!is.na(Prop_Ind) & !is.na(Pre_Ratio_Ind), Prop_Ind / Pre_Ratio_Ind, NA_real_),
-                            ifelse(!is.na(Num_Ind) & !is.na(Pre_Ratio_Ind) & Pre_Ratio_Ind>0, Num_Ind / Pre_Ratio_Ind, NA_real_))
+         Pre_Ratio_Ind = ifelse(is.na(Num_Ind), 1 - Prop_Ind, ifelse(!is.na(Num_Ind) & !is.na(Ind_Tot), Ind_Tot - Num_Ind, ifelse(!is.na(Density) & !is.na(Density_Tot), Density_Tot - Density, NA_real_))),
+    Ratio_Ind = case_when(
+      !is.na(Num_Ind)  & !is.na(Pre_Ratio_Ind) & Pre_Ratio_Ind > 0 ~ Num_Ind  / Pre_Ratio_Ind,
+      !is.na(Prop_Ind) & !is.na(Pre_Ratio_Ind) & Pre_Ratio_Ind > 0 ~ Prop_Ind / Pre_Ratio_Ind,
+      !is.na(Density)  & !is.na(Pre_Ratio_Ind) & Pre_Ratio_Ind > 0 ~ Density  / Pre_Ratio_Ind,
+      TRUE ~ NA_real_
+    )
   ) %>%
   group_by(Study_Code, Period, Prey_Taxa_Valid) %>%
  # Proportion of Pantheria kg available
@@ -361,18 +392,35 @@ group_by(Study_Code, Period) %>%
   mutate(Prop_kg_Cons = Prey_Tot_kg_Cons/Tot_kg_Cons) %>%
   mutate(Pre_Ratio_kg_Cons = Tot_kg_Cons - Prey_Tot_kg_Cons) %>%
   mutate(Ratio_kg_Cons = Prey_Tot_kg_Cons/Pre_Ratio_kg_Cons) %>%
-  relocate(Mass_Cat, Ind_Tot, Density_Tot, Prop_Ind, Ratio_Ind, Prop_kg_Avail, Ratio_kg_Avail, .before = Orig_BM_Avail) %>%
+  relocate(Mass_Cat, Ind_Tot, Density_Tot, Prop_Ind, Ratio_Ind, Pre_Ratio_Ind, Prop_kg_Avail, Ratio_kg_Avail, .before = Orig_BM_Avail) %>%
   relocate(Prey_Tot_kg_Cons, Tot_kg_Cons, Prop_kg_Cons, Ratio_Occs, Ratio_kg_Cons, .before = Mean_Perc_Vol) %>%
-  filter()
+  filter(!is.na(Ratio_Ind),is.finite(Ratio_Ind), !Ratio_Ind %in% c(0, 1)) %>%
+   group_by(Study_Code, Period) %>%
+  filter(n() == 2) %>%
+  ungroup()
+
+scattop2.bysize <- scattop2 %>%
+  group_by(Study_Code, Period) %>%
+  arrange(Pantheria_kg, .by_group = TRUE) %>%
+   mutate(
+    PreyX = if_else(row_number() == 1, "smaller", "larger")
+  ) %>%
+  ungroup()
+
+scattop2.nomixedgroup <- scattop2 %>%
+  filter(!Prey_Item %in% ("Cervids")) %>%
+   group_by(Study_Code, Period) %>%
+  filter(n() == 2) %>%
+  ungroup()
 
 ```
 
-```{r}
+```{r, #top 2 portion}
 modelw.scattop2 <- glm(Prop_kg_Cons ~ 0 + Prop_kg_Avail + Mass_Cat +  Defense + Biome_Detal_Name, data= scattop2) #Proportion biomass consumed ~ 0 + Proportion biomass available + body size category +  antipredator + biome
 summary(modelw.scattop2)
 ```
 
-```{r}
+```{r, #top 2 portion}
 coef_df2 <- tidy(modelw.scattop2, conf.int = TRUE)
 
 allcov2 <- ggplot(coef_df2, aes(x = estimate, y = term)) +
@@ -385,7 +433,7 @@ ggsave("~/Github/preyswitch_litrev/WIP - Report Stage 2/plots/allcov2.png", plot
 allcov2
 ```
 
-```{r}
+```{r, #top 2 portion}
 scattop2_cons_avail_plot <- ggplot(scattop2) +
   geom_point(aes(x = Prop_kg_Avail, y = Prop_kg_Cons)) + 
   geom_abline(intercept = 0, slope = 1, linetype = "dashed") + 
@@ -405,16 +453,179 @@ scattop2_cons_avail_plot
 ```
 
 ```{r}
-modelw.ratio.ind.occ.scattop2 <- glm(Ratio_Occs ~ 0 + Ratio_Ind + Mass_Cat +  Defense + Biome_Detal_Name, data= scattop2) #Proportion biomass consumed ~ 0 + Proportion biomass available + body size category +  antipredator + biome
-summary(modelw.ratio.ind.occ.scattop2)
+scattop2_ratio_ind_occs_plot_all <- ggplot(scattop2) +
+  geom_point(aes(x = Ratio_Ind, y = Ratio_Occs)) + 
+  geom_abline(intercept = 0, slope = 1, linetype = "dashed") + 
+  theme_classic() + 
+  theme(text = element_text(size = 10)) +
+  
+  # Reduce the number of ticks on the axes
+ # scale_x_continuous(breaks = c(0, 0.5, 1)) +  
+ # scale_y_continuous(breaks = c(0, 0.5, 1)) +  
+  
+  xlab("Relative Availability") + 
+  ylab("Relative Consumption")
+
+ggsave("~/Github/preyswitch_litrev/WIP - Report Stage 2/plots/scattop2_ratio_ind_occs_plot_all.png", plot = scattop2_ratio_ind_occs_plot_all, height = 5, width = 7, dpi = 700)
+
+scattop2_ratio_ind_occs_plot_all
+```
+
+
+```{r, #ratio ind to occurrences}
+modelw.ratio.ind.occ.scattop2.all <- glm(Ratio_Occs ~ 0 + Ratio_Ind + Mass_Cat +  Defense + Biome_Detal_Name, data= scattop2) #ratio of occurences in scat (occurence prey 1/occurence prey 2) ~ 0 + ratio of ind available (prey 1/prey 2) + body size category +  antipredator + biome
+summary(modelw.ratio.ind.occ.scattop2.all)
+```
+
+```{r}
+coef_df3 <- tidy(modelw.ratio.ind.occ.scattop2.all, conf.int = TRUE)
+
+cov3 <- ggplot(coef_df3, aes(x = estimate, y = term)) +
+  geom_point() +
+  geom_errorbarh(aes(xmin = conf.low, xmax = conf.high), height = 0) +
+  geom_vline(xintercept = 0, linetype = "dashed") +
+  theme_bw() +
+  labs(x = "Coefficient estimate", y = "")
+ggsave("~/Github/preyswitch_litrev/WIP - Report Stage 2/plots/cov3.png", plot = cov3, height = 5, width = 7, dpi = 700)
+cov3
+```
+
+
+```{r, #Ratios ind to occurences, no extremes}
+scattop2.noextremes <- scattop2 %>%
+  filter(Ratio_Occs < 12) %>%
+   filter(Ratio_Ind < 12)
+
+scattop2_ratio_ind_occs_plot <- ggplot(scattop2.noextremes) +
+  geom_point(aes(x = Ratio_Ind, y = Ratio_Occs)) + 
+  geom_abline(intercept = 0, slope = 1, linetype = "dashed") + 
+  theme_classic() + 
+  theme(text = element_text(size = 10)) +
+  
+  # Reduce the number of ticks on the axes
+ # scale_x_continuous(breaks = c(0, 0.5, 1)) +  
+ # scale_y_continuous(breaks = c(0, 0.5, 1)) +  
+  
+  xlab("Relative Availability") + 
+  ylab("Relative Consumption")
+
+ggsave("~/Github/preyswitch_litrev/WIP - Report Stage 2/plots/scattop2_ratio_ind_occs_plot.png", plot = scattop2_ratio_ind_occs_plot, height = 5, width = 7, dpi = 700)
+
+scattop2_ratio_ind_occs_plot
+```
+
+```{r}
+modelw.ratio.ind.occ.scattop2.noextremes <- glm(Ratio_Occs ~ 0 + Ratio_Ind + Mass_Cat +  Defense + Biome_Detal_Name, data= scattop2.noextremes) #ratio of occurences in scat (occurence prey 1/occurence prey 2) ~ 0 + ratio of ind available (prey 1/prey 2) + body size category +  antipredator + biome
+summary(modelw.ratio.ind.occ.scattop2.noextremes)
+```
+
+```{r}
+coef_df4 <- tidy(modelw.ratio.ind.occ.scattop2.noextremes, conf.int = TRUE)
+
+cov4 <- ggplot(coef_df4, aes(x = estimate, y = term)) +
+  geom_point() +
+  geom_errorbarh(aes(xmin = conf.low, xmax = conf.high), height = 0) +
+  geom_vline(xintercept = 0, linetype = "dashed") +
+  theme_bw() +
+  labs(x = "Coefficient estimate", y = "")
+ggsave("~/Github/preyswitch_litrev/WIP - Report Stage 2/plots/cov4.png", plot = cov4, height = 5, width = 7, dpi = 700)
+cov4
+```
+
+```{r}
+scattop2.bysize <- scattop2.bysize %>%
+  filter(Ratio_Occs < 12) %>%
+   filter(Ratio_Ind < 12)
+
+scattop2_ratio_bysize_plot <- ggplot(scattop2.bysize) +
+  geom_point(aes(x = Ratio_Ind, y = Ratio_Occs, color = Prey_Taxa_Valid)) + 
+  geom_abline(intercept = 0, slope = 1, linetype = "dashed") + 
+  theme_classic() + 
+  theme(text = element_text(size = 10)) +
+  
+  # Reduce the number of ticks on the axes
+ # scale_x_continuous(breaks = c(0, 0.5, 1)) +  
+ # scale_y_continuous(breaks = c(0, 0.5, 1)) +  
+  
+  xlab("Relative Availability") + 
+  ylab("Relative Consumption")
+
+ggsave("~/Github/preyswitch_litrev/WIP - Report Stage 2/plots/scattop2_ratio_ind_occs_plot_bysize.png", plot = scattop2_ratio_bysize_plot, height = 5, width = 7, dpi = 700)
+
+scattop2_ratio_bysize_plot
 ```
 
 
 ```{r}
-scattop2.ratios <- scattop2 %>%
-  filter(Ratio_kg_Avail < 20)
+scattop2.wildboar <- scattop2.noextremes%>%
+  filter(Prey_Taxa_Valid == "Sus scrofa")
 
-scattop2_ratio_cons_avail_plot <- ggplot(scattop2.ratios) +
+scattop2_ratio_wildboar <- ggplot(scattop2.wildboar) +
+  geom_point(aes(x = Ratio_kg_Avail, y = Ratio_kg_Cons)) + 
+  geom_abline(intercept = 0, slope = 1, linetype = "dashed") + 
+  theme_classic() + 
+  theme(text = element_text(size = 10)) +
+  
+  # Reduce the number of ticks on the axes
+ # scale_x_continuous(breaks = c(0, 0.5, 1)) +  
+ # scale_y_continuous(breaks = c(0, 0.5, 1)) +  
+  
+  xlab("Avail. kg Wild Boar/Avail. kg Prey2") + 
+  ylab("Cons. kg Wild Boar/Cons. kg Prey2")
+
+ggsave("~/Github/preyswitch_litrev/WIP - Report Stage 2/plots/scattop2_ratio_wildboar.png", plot = scattop2_ratio_wildboar, height = 5, width = 7, dpi = 700)
+
+scattop2_ratio_wildboar
+```
+
+```{r}
+scat.boar.elk <- scattop2.noextremes%>%
+  filter(Prey_Taxa_Valid %in% c("Sus scrofa", "Cervus elaphus")) %>%
+  group_by(Study_Code, Period) %>%
+  filter(n() == 2) %>%
+  ungroup() %>%
+  filter(Prey_Taxa_Valid %in% c("Sus scrofa"))
+
+scat_boar_elk <- ggplot(scat.boar.elk) +
+  geom_point(aes(x = Ratio_kg_Avail, y = Ratio_kg_Cons)) + 
+  geom_abline(intercept = 0, slope = 1, linetype = "dashed") + 
+  theme_classic() + 
+  theme(text = element_text(size = 10)) +
+  
+  # Reduce the number of ticks on the axes
+ # scale_x_continuous(breaks = c(0, 0.5, 1)) +  
+ # scale_y_continuous(breaks = c(0, 0.5, 1)) +  
+  
+  xlab("Relative kg Available") + 
+  ylab("Relative kg Consumed")
+
+ggsave("~/Github/preyswitch_litrev/WIP - Report Stage 2/plots/scat_boar_elk.png", plot = scat_boar_elk, height = 5, width = 7, dpi = 700)
+
+scat_boar_elk
+```
+
+
+```{r, #ratios kg}
+modelw.ratio.kg.scattop2.noextremes <- glm(Ratio_kg_Cons ~ 0 + Ratio_kg_Avail + Mass_Cat +  Defense + Biome_Detal_Name, data= scattop2.noextremes) #ratio biomass consumed ~ 0 + ratio biomass available + body size category +  antipredator + biome
+summary(modelw.ratio.kg.scattop2.noextremes)
+```
+
+```{r}
+coef_df5 <- tidy(modelw.ratio.kg.scattop2.noextremes, conf.int = TRUE)
+
+cov5 <- ggplot(coef_df5, aes(x = estimate, y = term)) +
+  geom_point() +
+  geom_errorbarh(aes(xmin = conf.low, xmax = conf.high), height = 0) +
+  geom_vline(xintercept = 0, linetype = "dashed") +
+  theme_bw() +
+  labs(x = "Coefficient estimate", y = "")
+ggsave("~/Github/preyswitch_litrev/WIP - Report Stage 2/plots/cov5.png", plot = cov4, height = 5, width = 7, dpi = 700)
+cov5
+```
+
+
+```{r}
+scattop2_ratio_kg_plot <- ggplot(scattop2) +
   geom_point(aes(x = Ratio_kg_Avail, y = Ratio_kg_Cons)) + 
   geom_abline(intercept = 0, slope = 1, linetype = "dashed") + 
   theme_classic() + 
@@ -427,9 +638,13 @@ scattop2_ratio_cons_avail_plot <- ggplot(scattop2.ratios) +
   xlab("Ratio of Biomass Available") + 
   ylab("Ratio of Biomass Consumed")
 
-ggsave("~/Github/preyswitch_litrev/WIP - Report Stage 2/plots/scattop2_ratio_cons_avail_plot.png", plot = scattop2_ratio_cons_avail_plot, height = 5, width = 7, dpi = 700)
+ggsave("~/Github/preyswitch_litrev/WIP - Report Stage 2/plots/scattop2_ratio_kg_plot.png", plot = scattop2_ratio_kg_plot, height = 5, width = 7, dpi = 700)
 
-scattop2_ratio_cons_avail_plot
+scattop2_ratio_kg_plot
+```
+
+```{r}
+
 ```
 
 

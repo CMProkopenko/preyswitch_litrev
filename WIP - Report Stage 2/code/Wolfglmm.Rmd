@@ -21,10 +21,18 @@ StudyArea_Nov2025 <- read_csv("~/WIP - Report Stage 2/data/StudyArea_Nov2025.csv
 scatpref.unfinished <- ScatPref_Nov2025 %>%
   select(Study_Code, Paper_ID, Study_Area, Area, Prey_Item, Prey_Taxa_Valid, Period, Num_Ind, Ratio_Ind_Avail, Prop_Ind_Avail, Density, Avg_Mass_kg, Pantheria_kg, Orig_BM_Avail, Orig_Prop_BM_Avail, Scat_n_Tot, Scat_n_Prey, Abs_FO, Rel_FO, Mean_Perc_Vol, Orig_BM_Consumed, Orig_Prop_BM_Consumed, Livestock_Wild, Defense, n_Prey_Species, Wild_Ung_Avail_n) %>%
   filter(!Study_Code %in% ("DAS12ADC")) %>%
+    filter(!(Study_Code == "VAE09HNP" & Prey_Item == "Hare")) %>%
   filter(!Livestock_Wild %in%c("Feral", "Livestock")) %>%
   group_by(Study_Code, Period) %>%
   filter(n() >= 2) %>%
-  ungroup() 
+  ungroup() %>%
+   mutate(
+    Prey_Taxa_Valid = if_else(
+      Prey_Taxa_Valid == "Alces americanus",
+      "Alces alces",
+      Prey_Taxa_Valid
+    )
+  )
 
 #need to remove Chavez 2005 1997-1999 Spring-Autumn
 #davis 2012 needs to be removed
@@ -110,12 +118,16 @@ group_by(Study_Code, Period) %>%
     Density_Tot = sum(Density),
     Prop_Ind_Avail_Sum = sum(Prop_Ind_Avail)) %>%
   ungroup() %>%
-         # Proportion of individuals available
-         mutate(Prop_Ind = ifelse(is.na(Num_Ind), Prop_Ind_Avail/Prop_Ind_Avail_Sum, ifelse(!is.na(Num_Ind) & Ind_Tot>0, Num_Ind / Ind_Tot, NA_real_)),
+          # Proportion of individuals available
+         mutate(Prop_Ind = case_when(
+      is.na(Num_Ind) & !is.na(Prop_Ind_Avail) ~ Prop_Ind_Avail/Prop_Ind_Avail_Sum,
+      !is.na(Num_Ind) & !is.na(Ind_Tot) ~ Num_Ind / Ind_Tot,
+      !is.na(Density) & !is.na(Density_Tot) ~  Density / Density_Tot,
+      TRUE ~ NA_real_
+    ),
          # Ratio of individuals available
-         Pre_Ratio_Ind = ifelse(is.na(Num_Ind), 1 - Prop_Ind, ifelse(!is.na(Num_Ind) & !is.na(Ind_Tot), Ind_Tot - Num_Ind, NA_real_)),
-         Ratio_Ind = ifelse(is.na(Num_Ind), ifelse(!is.na(Prop_Ind) & !is.na(Pre_Ratio_Ind), Prop_Ind / Pre_Ratio_Ind, NA_real_),
-                            ifelse(!is.na(Num_Ind) & !is.na(Pre_Ratio_Ind) & Pre_Ratio_Ind>0, Num_Ind / Pre_Ratio_Ind, NA_real_))
+           Pre_Ratio_Ind = 1 - Prop_Ind,
+    Ratio_Ind = Prop_Ind / Pre_Ratio_Ind,
   ) %>%
   group_by(Study_Code, Period, Prey_Taxa_Valid) %>%
  # Proportion of Pantheria kg available
@@ -147,8 +159,13 @@ group_by(Study_Code, Period) %>%
   mutate(Prop_kg_Cons = Prey_Tot_kg_Cons/Tot_kg_Cons) %>%
   mutate(Pre_Ratio_kg_Cons = Tot_kg_Cons - Prey_Tot_kg_Cons) %>%
   mutate(Ratio_kg_Cons = Prey_Tot_kg_Cons/Pre_Ratio_kg_Cons) %>%
-  relocate(Mass_Cat, Ind_Tot, Density_Tot, Prop_Ind, Prop_kg_Avail, Ratio_kg_Avail, .before = Orig_BM_Avail) %>%
-  relocate(Prey_Tot_kg_Cons, Tot_kg_Cons, Prop_kg_Cons, Ratio_kg_Cons, .before = Mean_Perc_Vol)
+  relocate(Num_Ind, Ind_Tot, Density, Density_Tot, Prop_Ind, Prop_Ind_Avail, Ratio_Ind, Pre_Ratio_Ind, Ratio_Ind_Avail, Prop_kg_Avail, Ratio_kg_Avail, Mass_Cat, Pantheria_kg, Avg_Mass_kg, .before = Orig_BM_Avail) %>%
+  relocate(Prey_Tot_kg_Cons, Tot_kg_Cons, Prop_kg_Cons, Ratio_Occs, Ratio_kg_Cons, .before = Mean_Perc_Vol) %>%
+  filter(!is.na(Prop_Ind)) %>%
+  group_by(Study_Code, Period) %>%
+  filter(n() >= 2) %>%
+  ungroup() 
+  
 
 ```
 
@@ -330,18 +347,18 @@ scat.sus <- scat.sus.1 %>%
 
 ######################### TOP 2 WILD ONLY ####################
 ```{r}
-scattop2.norecalc <- scatstudy %>%
-filter(Prop_kg_Cons > 0) %>%
+scattop2abund.norecalc <- scatstudy %>%
+filter(Ratio_kg_Cons > 0) %>%
   group_by(Study_Code, Period) %>%
-  arrange(desc(Prop_kg_Cons)) %>%  # Sort by Prop_kg_Cons in descending order
-  slice_head(n = 2) %>%  # Select the top 2 values for each group
-  group_by(Study_Code, Period) %>%
-  mutate(sum_top_two_kg_cons = sum(Prop_kg_Cons, na.rm = TRUE)) %>%  # Sum the top 2 values
-  ungroup() %>%
- filter(sum_top_two_kg_cons >= 0.70)   # Filter rows where cumulative sum reaches at least 0.70
+  arrange(desc(Ratio_Ind)) %>%  
+  slice_head(n = 2) #%>%  # Select the top 2 values for each group
+#  group_by(Study_Code, Period) %>%
+  #mutate(sum_top_two_kg_cons = sum(Prop_kg_Cons, na.rm = TRUE)) %>%  # Sum the top 2 values
+ # ungroup() %>%
+# filter(sum_top_two_kg_cons >= 0.70)   # Filter rows where cumulative sum reaches at least 0.70
  
 
-scattop2 <- scattop2.norecalc %>%
+scattop2abund <- scattop2abund.norecalc %>%
   mutate(Num_Ind = if_else(is.na(Num_Ind) & !is.na(Density) & !is.na(Area),
                             Density * Area, Num_Ind)) %>% 
   mutate(Density = if_else(is.na(Density) & !is.na(Num_Ind) & !is.na(Area),
@@ -351,16 +368,16 @@ group_by(Study_Code, Period) %>%
     Density_Tot = sum(Density),
     Prop_Ind_Avail_Sum = sum(Prop_Ind_Avail)) %>%
   ungroup() %>%
-         # Proportion of individuals available
-         mutate(Prop_Ind = ifelse(is.na(Num_Ind), Prop_Ind_Avail/Prop_Ind_Avail_Sum, ifelse(!is.na(Num_Ind) & Ind_Tot>0, Num_Ind / Ind_Tot, NA_real_)),
-         # Ratio of individuals available
-         Pre_Ratio_Ind = ifelse(is.na(Num_Ind), 1 - Prop_Ind, ifelse(!is.na(Num_Ind) & !is.na(Ind_Tot), Ind_Tot - Num_Ind, ifelse(!is.na(Density) & !is.na(Density_Tot), Density_Tot - Density, NA_real_))),
-    Ratio_Ind = case_when(
-      !is.na(Num_Ind)  & !is.na(Pre_Ratio_Ind) & Pre_Ratio_Ind > 0 ~ Num_Ind  / Pre_Ratio_Ind,
-      !is.na(Prop_Ind) & !is.na(Pre_Ratio_Ind) & Pre_Ratio_Ind > 0 ~ Prop_Ind / Pre_Ratio_Ind,
-      !is.na(Density)  & !is.na(Pre_Ratio_Ind) & Pre_Ratio_Ind > 0 ~ Density  / Pre_Ratio_Ind,
+      # Proportion of individuals available
+         mutate(Prop_Ind = case_when(
+      is.na(Num_Ind) & !is.na(Prop_Ind_Avail) ~ Prop_Ind_Avail/Prop_Ind_Avail_Sum,
+      !is.na(Num_Ind) & !is.na(Ind_Tot) ~ Num_Ind / Ind_Tot,
+      !is.na(Density) & !is.na(Density_Tot) ~  Density / Density_Tot,
       TRUE ~ NA_real_
-    )
+    ),
+         # Ratio of individuals available
+           Pre_Ratio_Ind = 1 - Prop_Ind,
+    Ratio_Ind = Prop_Ind / Pre_Ratio_Ind,
   ) %>%
   group_by(Study_Code, Period, Prey_Taxa_Valid) %>%
  # Proportion of Pantheria kg available
@@ -392,14 +409,14 @@ group_by(Study_Code, Period) %>%
   mutate(Prop_kg_Cons = Prey_Tot_kg_Cons/Tot_kg_Cons) %>%
   mutate(Pre_Ratio_kg_Cons = Tot_kg_Cons - Prey_Tot_kg_Cons) %>%
   mutate(Ratio_kg_Cons = Prey_Tot_kg_Cons/Pre_Ratio_kg_Cons) %>%
-  relocate(Mass_Cat, Ind_Tot, Density_Tot, Prop_Ind, Ratio_Ind, Pre_Ratio_Ind, Prop_kg_Avail, Ratio_kg_Avail, .before = Orig_BM_Avail) %>%
+  relocate(Num_Ind, Ind_Tot, Density, Density_Tot, Prop_Ind, Prop_Ind_Avail, Ratio_Ind, Pre_Ratio_Ind, Ratio_Ind_Avail, Prop_kg_Avail, Ratio_kg_Avail, Mass_Cat, Pantheria_kg, Avg_Mass_kg, .before = Orig_BM_Avail) %>%
   relocate(Prey_Tot_kg_Cons, Tot_kg_Cons, Prop_kg_Cons, Ratio_Occs, Ratio_kg_Cons, .before = Mean_Perc_Vol) %>%
   filter(!is.na(Ratio_Ind),is.finite(Ratio_Ind), !Ratio_Ind %in% c(0, 1)) %>%
    group_by(Study_Code, Period) %>%
   filter(n() == 2) %>%
   ungroup()
 
-scattop2.bysize <- scattop2 %>%
+scattop2abund.bysize <- scattop2abund %>%
   group_by(Study_Code, Period) %>%
   arrange(Pantheria_kg, .by_group = TRUE) %>%
    mutate(
@@ -407,7 +424,122 @@ scattop2.bysize <- scattop2 %>%
   ) %>%
   ungroup()
 
-scattop2.nomixedgroup <- scattop2 %>%
+scattop2abund.more <- scattop2abund %>%
+  group_by(Study_Code, Period) %>%
+  arrange(desc(Ratio_Ind), .by_group = TRUE) %>%
+   mutate(
+    PreyAbund = if_else(row_number() == 1, "More", "Fewer"),
+    Prey_Pair = paste(sort(Prey_Taxa_Valid), collapse = " / ")
+  ) %>%
+  ungroup() %>%
+   filter(PreyAbund == "More")
+
+scattop2abund.morekg <- scattop2abund %>%
+  group_by(Study_Code, Period) %>%
+  arrange(desc(Ratio_kg_Cons), .by_group = TRUE) %>%
+   mutate(
+    PreykgAbund = if_else(row_number() == 1, "More", "Fewer"),
+    Prey_Pair = paste(sort(Prey_Taxa_Valid), collapse = " + ")
+  ) %>%
+  ungroup() %>%
+   filter(PreykgAbund == "More")
+
+scattop2abund.nomixedgroup <- scattop2abund %>%
+  filter(!Prey_Item %in% ("Cervids")) %>%
+   group_by(Study_Code, Period) %>%
+  filter(n() == 2) %>%
+  ungroup()
+
+
+
+scattop2kgabund.norecalc <- scatstudy %>%
+filter(Ratio_kg_Cons > 0) %>%
+  group_by(Study_Code, Period) %>%
+  arrange(desc(Num_Ind)) %>%  
+  slice_head(n = 2) #%>%  # Select the top 2 values for each group
+#  group_by(Study_Code, Period) %>%
+  #mutate(sum_top_two_kg_cons = sum(Prop_kg_Cons, na.rm = TRUE)) %>%  # Sum the top 2 values
+ # ungroup() %>%
+# filter(sum_top_two_kg_cons >= 0.70)   # Filter rows where cumulative sum reaches at least 0.70
+ 
+
+scattop2kgabund <- scattop2kgabund.norecalc %>%
+  mutate(Num_Ind = if_else(is.na(Num_Ind) & !is.na(Density) & !is.na(Area),
+                            Density * Area, Num_Ind)) %>% 
+  mutate(Density = if_else(is.na(Density) & !is.na(Num_Ind) & !is.na(Area),
+                           Num_Ind / Area, Density)) %>%
+group_by(Study_Code, Period) %>%
+   mutate(Ind_Tot = sum(Num_Ind),
+    Density_Tot = sum(Density),
+    Prop_Ind_Avail_Sum = sum(Prop_Ind_Avail)) %>%
+  ungroup() %>%
+      # Proportion of individuals available
+         mutate(Prop_Ind = case_when(
+      is.na(Num_Ind) & !is.na(Prop_Ind_Avail) ~ Prop_Ind_Avail/Prop_Ind_Avail_Sum,
+      !is.na(Num_Ind) & !is.na(Ind_Tot) ~ Num_Ind / Ind_Tot,
+      !is.na(Density) & !is.na(Density_Tot) ~  Density / Density_Tot,
+      TRUE ~ NA_real_
+    ),
+         # Ratio of individuals available
+           Pre_Ratio_Ind = 1 - Prop_Ind,
+    Ratio_Ind = Prop_Ind / Pre_Ratio_Ind,
+  ) %>%
+  group_by(Study_Code, Period, Prey_Taxa_Valid) %>%
+ # Proportion of Pantheria kg available
+   mutate(PropInd_x_Pan = Prop_Ind * Pantheria_kg) %>%
+  ungroup() %>%
+  group_by(Study_Code, Period) %>%
+   mutate(Sum_PropInd_x_Pan = sum(PropInd_x_Pan)) %>%
+  mutate(Prop_kg_Avail = PropInd_x_Pan / Sum_PropInd_x_Pan) %>%
+ # Ratio of Pantheria kg available
+  mutate(Pre_Ratio_kg_Avail = Sum_PropInd_x_Pan - PropInd_x_Pan) %>%
+  mutate(Ratio_kg_Avail = PropInd_x_Pan / Pre_Ratio_kg_Avail) %>%
+  #Step 2: Calculate the Scat_n_Prey, new relative FO, BM consumed, and ratio and prop of BM consumed
+  #Make sure everything has a Scat_n_Prey if possible
+  group_by(Study_Code, Period, Prey_Taxa_Valid) %>%
+   mutate(Scat_n_Prey = ifelse(is.na(Scat_n_Prey), Scat_n_Tot*Abs_FO/100, Scat_n_Prey)) %>%
+  ungroup() %>%
+  #Calculate a new Relative_FO and a Ratio of Occurences
+   group_by(Study_Code, Period) %>%
+   mutate(Scat_items_Tot = sum(Scat_n_Prey)) %>%
+    mutate(New_Rel_FO = Scat_n_Prey/Scat_items_Tot) %>%
+    mutate(Pre_Ratio_Occ = Scat_items_Tot - Scat_n_Prey) %>%
+    mutate(Ratio_Occs = Scat_n_Prey/Pre_Ratio_Occ) %>%
+  #Calculate BM consumed (using (kg per scat)*Abs FO = 0.439+(0.008*Pan kg))
+  mutate(Abs_FO = ifelse(is.na(Abs_FO), Scat_n_Prey/Scat_n_Tot, Abs_FO)) %>%
+   mutate(kg_Per_Scat = 0.439+0.008*Pantheria_kg) %>%
+#Calculate the proportion and ratio of biomass consumed
+  mutate(Prey_Tot_kg_Cons = kg_Per_Scat*Scat_n_Prey) %>%
+  mutate(Tot_kg_Cons = sum(Prey_Tot_kg_Cons)) %>%
+  mutate(Prop_kg_Cons = Prey_Tot_kg_Cons/Tot_kg_Cons) %>%
+  mutate(Pre_Ratio_kg_Cons = Tot_kg_Cons - Prey_Tot_kg_Cons) %>%
+  mutate(Ratio_kg_Cons = Prey_Tot_kg_Cons/Pre_Ratio_kg_Cons) %>%
+  relocate(Num_Ind, Ind_Tot, Density, Density_Tot, Prop_Ind, Prop_Ind_Avail, Ratio_Ind, Pre_Ratio_Ind, Ratio_Ind_Avail, Prop_kg_Avail, Ratio_kg_Avail, Mass_Cat, Pantheria_kg, Avg_Mass_kg, .before = Orig_BM_Avail) %>%
+  relocate(Prey_Tot_kg_Cons, Tot_kg_Cons, Prop_kg_Cons, Ratio_Occs, Ratio_kg_Cons, Pre_Ratio_kg_Cons, .before = Mean_Perc_Vol) %>%
+  filter(!is.na(Ratio_Ind),is.finite(Ratio_Ind), !Ratio_Ind %in% c(0, 1)) %>%
+   group_by(Study_Code, Period) %>%
+  filter(n() == 2) %>%
+  ungroup()
+
+scattop2kgabund.bysize <- scattop2kgabund %>%
+  group_by(Study_Code, Period) %>%
+  arrange(Pantheria_kg, .by_group = TRUE) %>%
+   mutate(
+    PreyX = if_else(row_number() == 1, "smaller", "larger")
+  ) %>%
+  ungroup()
+
+scattop2kgabund.more <- scattop2kgabund %>%
+  group_by(Study_Code, Period) %>%
+  arrange(desc(Ratio_kg_Cons), .by_group = TRUE) %>%
+   mutate(
+    PreykgAbund = if_else(row_number() == 1, "More", "Fewer")
+  ) %>%
+  ungroup() %>%
+   filter(PreykgAbund == "More")
+
+
+scattop2kgabund.nomixedgroup <- scattop2kgabund %>%
   filter(!Prey_Item %in% ("Cervids")) %>%
    group_by(Study_Code, Period) %>%
   filter(n() == 2) %>%
@@ -553,6 +685,132 @@ scattop2_ratio_bysize_plot <- ggplot(scattop2.bysize) +
 ggsave("~/Github/preyswitch_litrev/WIP - Report Stage 2/plots/scattop2_ratio_ind_occs_plot_bysize.png", plot = scattop2_ratio_bysize_plot, height = 5, width = 7, dpi = 700)
 
 scattop2_ratio_bysize_plot
+```
+
+```{r}
+modelw.scattop2.abund <- glm(Ratio_Occs ~ 0 + Ratio_Ind + Mass_Cat +  Defense + Biome_Detal_Name, data= scattop2.abund) #Proportion biomass consumed ~ 0 + Proportion biomass available + body size category +  antipredator + biome
+summary(modelw.scattop2.abund)
+```
+
+```{r}
+#scattop2abund.more %>%
+#  count(Prey_Pair, sort = TRUE)
+
+scattop2abund_more_preypair <- ggplot(scattop2abund.more) +
+  geom_point(aes(x = Ratio_Ind, y = Ratio_Occs, color = Prey_Pair)) + 
+  geom_abline(intercept = 0, slope = 1, linetype = "dashed") + 
+  theme_classic() + 
+  theme(text = element_text(size = 10)) +
+  
+  scale_x_continuous(breaks = c(0, 2, 4, 6, 8, 10, 12)) +  
+  scale_y_continuous(breaks = c(0, 2, 4, 6, 8)) +  
+
+  scale_color_viridis_d(
+    option = "turbo",
+    name = "Prey1/Prey2"
+  ) +
+  
+  xlab("Relative Abundance Prey1/Prey2") + 
+  ylab("Relative Consumption Prey1/Prey2")
+
+ggsave("~/Github/preyswitch_litrev/WIP - Report Stage 2/plots/scattop2abund_more_preypair.png", plot = scattop2abund_more_preypair, height = 5, width = 7, dpi = 700)
+
+scattop2abund_more_preypair
+
+
+
+scattop2abund_more_studycode <- ggplot(scattop2abund.more) +
+  geom_point(aes(x = Ratio_Ind, y = Ratio_Occs, color = Study_Code)) + 
+  geom_abline(intercept = 0, slope = 1, linetype = "dashed") + 
+  theme_classic() + 
+  theme(text = element_text(size = 10)) +
+  
+  scale_x_continuous(breaks = c(0, 2, 4, 6, 8, 10, 12)) +  
+  scale_y_continuous(breaks = c(0, 2, 4, 6, 8)) +  
+
+  scale_color_viridis_d(
+    option = "turbo",
+    name = "Study Code"
+  ) +
+  
+  xlab("Relative Abundance Prey1/Prey2") + 
+  ylab("Relative Consumption Prey1/Prey2")
+
+ggsave("~/Github/preyswitch_litrev/WIP - Report Stage 2/plots/scattop2abund_more_studycode.png", plot = scattop2abund_more_studycode, height = 5, width = 7, dpi = 700)
+
+scattop2abund_more_studycode
+
+
+
+scattop2abund_more_PaperID <- ggplot(scattop2abund.more) +
+  geom_point(aes(x = Ratio_Ind, y = Ratio_Occs, color = Paper_ID)) + 
+  geom_abline(intercept = 0, slope = 1, linetype = "dashed") + 
+  theme_classic() + 
+  theme(text = element_text(size = 10)) +
+  
+  scale_x_continuous(breaks = c(0, 2, 4, 6, 8, 10, 12)) +  
+  scale_y_continuous(breaks = c(0, 2, 4, 6, 8)) +  
+
+  scale_color_viridis_d(
+    option = "turbo",
+    name = "Study ID"
+  ) +
+  
+  xlab("Relative Abundance Prey1/Prey2") + 
+  ylab("Relative Consumption Prey1/Prey2")
+
+ggsave("~/Github/preyswitch_litrev/WIP - Report Stage 2/plots/scattop2abund_more_PaperID.png", plot = scattop2abund_more_PaperID, height = 5, width = 7, dpi = 700)
+
+scattop2abund_more_PaperID
+
+
+
+
+scattop2abund.more.density <- scattop2abund.more %>%
+  filter(!is.na(Density))
+
+scattop2abund_more_density <- ggplot(scattop2abund.more.density) +
+  geom_point(aes(x = Ratio_Ind, y = Ratio_Occs, color = Density)) + 
+  geom_abline(intercept = 0, slope = 1, linetype = "dashed") + 
+  theme_classic() + 
+  theme(text = element_text(size = 10)) +
+  
+  scale_x_continuous(breaks = c(0, 2, 4, 6, 8, 10, 12)) +  
+  scale_y_continuous(breaks = c(0, 2, 4, 6, 8)) +  
+
+  scale_color_viridis_c(
+    option = "plasma", begin = 0.1, end = 0.95, trans = "log10",
+    name = "Prey1 Density"
+  ) +
+  
+  xlab("Relative Abundance Prey1/Prey2") + 
+  ylab("Relative Consumption Prey1/Prey2")
+
+ggsave("~/Github/preyswitch_litrev/WIP - Report Stage 2/plots/scattop2abund_more_density.png", plot = scattop2abund_more_density, height = 5, width = 7, dpi = 700)
+
+scattop2abund_more_density
+```
+
+
+
+
+```{r}
+scattop2kgabund_more <- ggplot(scattop2kgabund.more) +
+  geom_point(aes(x = Ratio_kg_Avail, y = Ratio_kg_Cons)) + 
+  geom_abline(intercept = 0, slope = 1, linetype = "dashed") + 
+  theme_classic() + 
+  theme(text = element_text(size = 10)) +
+  
+  # Reduce the number of ticks on the axes
+ # scale_x_continuous(breaks = c(0, 0.5, 1)) +  
+ # scale_y_continuous(breaks = c(0, 0.5, 1)) +  
+  
+  xlab("Relative kg Abundance Prey1/Prey2") + 
+  ylab("Relative kg Consumption Prey1/Prey2")
+
+ggsave("~/Github/preyswitch_litrev/WIP - Report Stage 2/plots/scattop2kgabund_more.png", plot = scattop2kgabund_more, height = 5, width = 7, dpi = 700)
+
+scattop2kgabund_more
 ```
 
 

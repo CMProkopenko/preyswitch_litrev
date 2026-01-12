@@ -702,8 +702,8 @@ scattop2abund_more_preypair <- ggplot(scattop2abund.more) +
   theme_classic() + 
   theme(text = element_text(size = 10)) +
   
-  scale_x_continuous(breaks = c(0, 2, 4, 6, 8, 10, 12)) +  
-  scale_y_continuous(breaks = c(0, 2, 4, 6, 8)) +  
+  scale_x_continuous(breaks = c(0, 2, 4, 6, 8, 10, 12, 14)) +  
+  scale_y_continuous(breaks = c(0, 2, 4, 6, 8, 10, 12, 14)) +  
 
   scale_color_viridis_d(
     option = "turbo",
@@ -725,9 +725,9 @@ scattop2abund_more_studycode <- ggplot(scattop2abund.more) +
   theme_classic() + 
   theme(text = element_text(size = 10)) +
   
-  scale_x_continuous(breaks = c(0, 2, 4, 6, 8, 10, 12)) +  
-  scale_y_continuous(breaks = c(0, 2, 4, 6, 8)) +  
-
+ scale_x_continuous(breaks = c(0, 2, 4, 6, 8, 10, 12, 14)) +  
+  scale_y_continuous(breaks = c(0, 2, 4, 6, 8, 10, 12, 14)) +  
+  
   scale_color_viridis_d(
     option = "turbo",
     name = "Study Code"
@@ -748,8 +748,8 @@ scattop2abund_more_PaperID <- ggplot(scattop2abund.more) +
   theme_classic() + 
   theme(text = element_text(size = 10)) +
   
-  scale_x_continuous(breaks = c(0, 2, 4, 6, 8, 10, 12)) +  
-  scale_y_continuous(breaks = c(0, 2, 4, 6, 8)) +  
+ scale_x_continuous(breaks = c(0, 2, 4, 6, 8, 10, 12, 14)) +  
+  scale_y_continuous(breaks = c(0, 2, 4, 6, 8, 10, 12, 14)) +  
 
   scale_color_viridis_d(
     option = "turbo",
@@ -776,12 +776,12 @@ scattop2abund_more_density <- ggplot(scattop2abund.more.density) +
   theme(text = element_text(size = 10)) +
   
   scale_x_continuous(
-  limits = c(0, NA),
-  breaks = c(0, 2, 4, 6, 8, 10, 12)
+  limits = c(0, 14),
+  breaks = c(0, 2, 4, 6, 8, 10, 12, 14)
 ) +
 scale_y_continuous(
-  limits = c(0, NA),
-  breaks = c(0, 2, 4, 6, 8, 10)
+  limits = c(0, 14),
+  breaks = c(0, 2, 4, 6, 8, 10, 12, 14)
 ) +
   scale_color_viridis_c(
     option = "plasma", begin = 0.1, end = 0.95, trans = "log10",

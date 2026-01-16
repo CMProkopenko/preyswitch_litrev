@@ -702,8 +702,14 @@ scattop2abund_more_preypair <- ggplot(scattop2abund.more) +
   theme_classic() + 
   theme(text = element_text(size = 10)) +
   
-  scale_x_continuous(breaks = c(0, 2, 4, 6, 8, 10, 12, 14)) +  
-  scale_y_continuous(breaks = c(0, 2, 4, 6, 8, 10, 12, 14)) +  
+   scale_x_continuous(
+  limits = c(0, 14),
+  breaks = c(0, 2, 4, 6, 8, 10, 12, 14)
+) +
+scale_y_continuous(
+  limits = c(0, 14),
+  breaks = c(0, 2, 4, 6, 8, 10, 12, 14)
+) + 
 
   scale_color_viridis_d(
     option = "turbo",
@@ -725,8 +731,14 @@ scattop2abund_more_studycode <- ggplot(scattop2abund.more) +
   theme_classic() + 
   theme(text = element_text(size = 10)) +
   
- scale_x_continuous(breaks = c(0, 2, 4, 6, 8, 10, 12, 14)) +  
-  scale_y_continuous(breaks = c(0, 2, 4, 6, 8, 10, 12, 14)) +  
+   scale_x_continuous(
+  limits = c(0, 14),
+  breaks = c(0, 2, 4, 6, 8, 10, 12, 14)
+) +
+scale_y_continuous(
+  limits = c(0, 14),
+  breaks = c(0, 2, 4, 6, 8, 10, 12, 14)
+) +
   
   scale_color_viridis_d(
     option = "turbo",
@@ -744,16 +756,24 @@ scattop2abund_more_studycode
 
 scattop2abund_more_PaperID <- ggplot(scattop2abund.more) +
   geom_point(aes(x = Ratio_Ind, y = Ratio_Occs, color = Paper_ID)) + 
+   geom_smooth(
+    aes(x = Ratio_Ind, y = Ratio_Occs, color = Paper_ID)
+  ) +
   geom_abline(intercept = 0, slope = 1, linetype = "dashed") + 
   theme_classic() + 
   theme(text = element_text(size = 10)) +
   
- scale_x_continuous(breaks = c(0, 2, 4, 6, 8, 10, 12, 14)) +  
-  scale_y_continuous(breaks = c(0, 2, 4, 6, 8, 10, 12, 14)) +  
-
+  scale_x_continuous(
+  limits = c(0, 14),
+  breaks = c(0, 2, 4, 6, 8, 10, 12, 14)
+) +
+scale_y_continuous(
+  limits = c(0, 14),
+  breaks = c(0, 2, 4, 6, 8, 10, 12, 14)
+) +
   scale_color_viridis_d(
     option = "turbo",
-    name = "Study ID"
+    name = "Paper ID"
   ) +
   
   xlab("Relative Abundance Prey1/Prey2") + 
@@ -762,7 +782,6 @@ scattop2abund_more_PaperID <- ggplot(scattop2abund.more) +
 ggsave("~/Github/preyswitch_litrev/WIP - Report Stage 2/plots/scattop2abund_more_PaperID.png", plot = scattop2abund_more_PaperID, height = 5, width = 7, dpi = 700)
 
 scattop2abund_more_PaperID
-
 
 
 
@@ -784,7 +803,7 @@ scale_y_continuous(
   breaks = c(0, 2, 4, 6, 8, 10, 12, 14)
 ) +
   scale_color_viridis_c(
-    option = "plasma", begin = 0.1, end = 0.95, trans = "log10",
+    option = "plasma", begin = 0.1, end = 0.95,
     name = "Prey1 Density"
   ) +
   
@@ -794,6 +813,93 @@ scale_y_continuous(
 ggsave("~/Github/preyswitch_litrev/WIP - Report Stage 2/plots/scattop2abund_more_density.png", plot = scattop2abund_more_density, height = 5, width = 7, dpi = 700)
 
 scattop2abund_more_density
+
+
+
+
+scattop2abund_more_density_colourlog <- ggplot(scattop2abund.more.density) +
+  geom_point(aes(x = Ratio_Ind, y = Ratio_Occs, color = Density)) + 
+  geom_abline(intercept = 0, slope = 1, linetype = "dashed") + 
+  theme_classic() + 
+  theme(text = element_text(size = 10)) +
+  
+  scale_x_continuous(
+  limits = c(0, 14),
+  breaks = c(0, 2, 4, 6, 8, 10, 12, 14)
+) +
+scale_y_continuous(
+  limits = c(0, 14),
+  breaks = c(0, 2, 4, 6, 8, 10, 12, 14)
+) +
+  scale_color_viridis_c(
+    option = "plasma", begin = 0.1, end = 0.95, trans = "log10",
+    name = "Prey1 Density"
+  ) +
+  
+  xlab("Relative Abundance Prey1/Prey2") + 
+  ylab("Relative Consumption Prey1/Prey2")
+
+ggsave("~/Github/preyswitch_litrev/WIP - Report Stage 2/plots/scattop2abund_more_density_colourlog.png", plot = scattop2abund_more_density_colourlog, height = 5, width = 7, dpi = 700)
+
+scattop2abund_more_density_colourlog
+
+
+
+
+scattop2abund_more_densitytot <- ggplot(scattop2abund.more.density) +
+  geom_point(aes(x = Ratio_Ind, y = Ratio_Occs, color = Density_Tot)) + 
+  geom_abline(intercept = 0, slope = 1, linetype = "dashed") + 
+  theme_classic() + 
+  theme(text = element_text(size = 10)) +
+  
+  scale_x_continuous(
+  limits = c(0, 14),
+  breaks = c(0, 2, 4, 6, 8, 10, 12, 14)
+) +
+scale_y_continuous(
+  limits = c(0, 14),
+  breaks = c(0, 2, 4, 6, 8, 10, 12, 14)
+) +
+  scale_color_viridis_c(
+    option = "plasma", begin = 0.1, end = 0.95,
+    name = "Total Density"
+  ) +
+  
+  xlab("Relative Abundance Prey1/Prey2") + 
+  ylab("Relative Consumption Prey1/Prey2")
+
+ggsave("~/Github/preyswitch_litrev/WIP - Report Stage 2/plots/scattop2abund_more_densitytot.png", plot = scattop2abund_more_densitytot, height = 5, width = 7, dpi = 700)
+
+scattop2abund_more_densitytot
+
+
+
+
+scattop2abund_more_densitytot_colourlog <- ggplot(scattop2abund.more.density) +
+  geom_point(aes(x = Ratio_Ind, y = Ratio_Occs, color = Density_Tot)) + 
+  geom_abline(intercept = 0, slope = 1, linetype = "dashed") + 
+  theme_classic() + 
+  theme(text = element_text(size = 10)) +
+  
+  scale_x_continuous(
+  limits = c(0, 14),
+  breaks = c(0, 2, 4, 6, 8, 10, 12, 14)
+) +
+scale_y_continuous(
+  limits = c(0, 14),
+  breaks = c(0, 2, 4, 6, 8, 10, 12, 14)
+) +
+  scale_color_viridis_c(
+    option = "plasma", begin = 0.1, end = 0.95, trans = "log10",
+    name = "Total Density"
+  ) +
+  
+  xlab("Relative Abundance Prey1/Prey2") + 
+  ylab("Relative Consumption Prey1/Prey2")
+
+ggsave("~/Github/preyswitch_litrev/WIP - Report Stage 2/plots/scattop2abund_more_densitytot_colourlog.png", plot = scattop2abund_more_densitytot_colourlog, height = 5, width = 7, dpi = 700)
+
+scattop2abund_more_densitytot_colourlog
 ```
 
 

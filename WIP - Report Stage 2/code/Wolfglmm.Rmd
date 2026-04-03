@@ -847,10 +847,10 @@ scattop2abund_more_density_colourlog
 
 
 scattop2abund_more_densitytot <- ggplot(scattop2abund.more.density) +
-  geom_point(aes(x = Ratio_Ind, y = Ratio_Occs, color = Density_Tot)) + 
+  geom_point(aes(x = Ratio_Ind, y = Ratio_Occs, color = Density_Tot), size = 3) + 
   geom_abline(intercept = 0, slope = 1, linetype = "dashed") + 
   theme_classic() + 
-  theme(text = element_text(size = 10)) +
+  theme(text = element_text(size = 16)) +
   
   scale_x_continuous(
   limits = c(0, 14),
@@ -876,10 +876,10 @@ scattop2abund_more_densitytot
 
 
 scattop2abund_more_densitytot_colourlog <- ggplot(scattop2abund.more.density) +
-  geom_point(aes(x = Ratio_Ind, y = Ratio_Occs, color = Density_Tot)) + 
+  geom_point(aes(x = Ratio_Ind, y = Ratio_Occs, color = Density_Tot), size = 3) + 
   geom_abline(intercept = 0, slope = 1, linetype = "dashed") + 
   theme_classic() + 
-  theme(text = element_text(size = 10)) +
+  theme(text = element_text(size = 16)) +
   
   scale_x_continuous(
   limits = c(0, 14),
